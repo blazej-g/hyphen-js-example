@@ -10,7 +10,7 @@ var model = {};
         var promise = Hyphen.Users.api.signIn.call();
         promise.then(function(result){
             sessionStorage.setItem("token", result.data.token);
-            $state.go("projects");
+            $state.go("users");
         }, function(reason){
             console.log("not signed in");
         });
