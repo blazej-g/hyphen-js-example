@@ -1,0 +1,19 @@
+<nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation" >
+    <ul class="nav navbar-nav" ng-show="PlannerAuthorization.isAuthorized()">
+        <li class="activ-e">
+            <a href="#/users" >Users</a>
+        </li>
+        <li ng-hide="PlannerAuthorization.isAuthorized()">
+            <a href="#/sign_in">Sign In</a>
+        </li>
+
+        <li ng-hide="PlannerAuthorization.isAuthorized()">
+            <a href="#/sign_up">SignUp</a>
+        </li>
+    </ul>
+    <ul class="nav navbar-nav pull-right" ng-show="PlannerAuthorization.isAuthorized()">
+        <li ng-click="SignOut()">
+            <a href="#">Sign Out</a>
+        </li>
+    </ul>
+</nav>

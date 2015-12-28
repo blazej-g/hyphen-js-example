@@ -1,0 +1,23 @@
+<div>
+
+    <h3>Projects</h3>
+
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <td>
+                Name
+            </td>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="project in Hyphen.Projects.dataModel.data">
+            <td>{{project.name}}</td>
+        </tr>
+        </tbody>
+        </table>
+
+    <a ng-click="removeAllProjects()" href="#">Remove all</a>
+    <a href="" ng-click="createProject();">Create project</a>
+
+</div>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" type="text/css" href="node_modules/bootstrap/dist/css/bootstrap.css"/>
+<link rel="stylesheet" type="text/css" href="node_modules/bootstrap/dist/css/bootstrap-theme.css"/>
+
+
+<link rel="stylesheet" type="text/css" href="stylesheets/style.css"/>
+
+<script src="node_modules/angular/angular.min.js"></script>
+<script src="node_modules/angular-route/angular-route.min.js"></script>
+<script src="node_modules/underscore/underscore-min.js"></script>
+
+<script src="node_modules/underscore/underscore-min.js"></script>
+<script src="node_modules/angular-ui-router/build/angular-ui-router.js"></script>
+
+<script src="js/js-hyphen.js"></script>
+<script src="js/js-hyphen-indexed-db.js"></script>
+<script src="js/js-hyphen-data-model.js"></script>
+<script src="js/js-hyphen-http.js"></script>
+<script src="js/js-hyphen-synchronizer.js"></script>
+
+
+<script src="app.js"></script>
+
+
+<script src="services/authorization.js"></script>
+
+<script src="services/environments.js"></script>
+
+<script src="modules/projects/projects-ctrl.js"></script>
+<script src="modules/sign-up/sign-up-ctrl.js"></script>
+<script src="modules/sign-in/sign-in-ctrl.js"></script>
+<script src="modules/users/users-ctrl.js"></script>
+
+<script src="models/users.js"></script>
+
+<script src="directives/nav/navigation-ctrl.js"></script>
+
+
+<head lang="en">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <meta charset="UTF-8">
+    <title>Hyphen Js</title>
+</head>
+<body ng-app="timeMinder">
+<div ng-show="syncing" style="color: red;">Synchronizing...</div>
+    <div ng-controller="navCtrl" id="menu-builder-navigation" class="navbar navbar-default" role="navigation" ng-if="menuVisibility">
+        <div class="container-fluid">
+            <div class="navbar-header"><a class="navbar-brand" href="#">Brand</a>
+            </div>
+            <div class="navbar-collapse navbar-menubuilder collapse" style="height: 1px;">
+                <ul class="nav navbar-nav navbar-left">
+                    <li ng-class="{'active' : active=='projects'}"><a href="#/projects" ng-click="active='projects'">Projects</a></li>
+                    <li ng-class="{'active' : active=='users'}"><a href="#/users" ng-click="active='users'">Users</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="" ng-click="signOut()">Sign Out</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+<div>
+    <ui-view></ui-view>
+
+
+</div> <!-- /container -->
+
+
+</body>
+</html>
