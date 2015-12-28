@@ -133,7 +133,7 @@ timeminder.config(['$urlRouterProvider', '$stateProvider', function ($urlRouterP
             //params: {requireAuthorization: false, menuVisibility: false}
     //});
 
-    $urlRouterProvider.otherwise("/projects");
+    $urlRouterProvider.otherwise("/users");
 
 }]);
 
