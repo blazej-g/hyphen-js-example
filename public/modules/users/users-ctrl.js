@@ -54,7 +54,7 @@ timeminder.controller('UsersCtrl', ['$scope', '$rootScope', '$http', 'Hyphen', f
             if(user.checked){
                 Hyphen.Users.api.delete.call(user._id);
             }
-        })
+        });
 
         $scope.allUsersCheckbox = false;
 

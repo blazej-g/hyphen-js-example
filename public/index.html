@@ -19,12 +19,13 @@
 <script src="js/js-hyphen-http.js"></script>
 <script src="js/js-hyphen-synchronizer.js"></script>
 
+<script src="models/users.js"></script>
+<script src="models/projects.js"></script>
 
 <script src="app.js"></script>
 
 
 <script src="services/authorization.js"></script>
-
 <script src="services/environments.js"></script>
 
 <script src="modules/projects/projects-ctrl.js"></script>
@@ -32,7 +33,8 @@
 <script src="modules/sign-in/sign-in-ctrl.js"></script>
 <script src="modules/users/users-ctrl.js"></script>
 
-<script src="models/users.js"></script>
+
+
 
 <script src="directives/nav/navigation-ctrl.js"></script>
 
@@ -50,7 +52,7 @@
             </div>
             <div class="navbar-collapse navbar-menubuilder collapse" style="height: 1px;">
                 <ul class="nav navbar-nav navbar-left">
-                    <li ng-class="{'active' : active=='projects'}"><a href="#/projects" ng-click="active='projects'">Projects</a></li>
+                    <li style="display: none;" ng-class="{'active' : active=='projects'}"><a href="#/projects" ng-click="active='projects'">Projects</a></li>
                     <li ng-class="{'active' : active=='users'}"><a href="#/users" ng-click="active='users'">Users</a></li>
                 </ul>
                 <ul class="nav navbar-nav navbar-right">

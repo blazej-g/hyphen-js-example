@@ -9,7 +9,7 @@
                     style="font-weight: bold;">{{Hyphen.dataModel.UsersDataModel.getById('561f93145ab9c5d99519d66c').getFullName()}}</span>
 
                 <div class="btn-group">
-                    <button type="submit" ng-class="{'active': Hyphen.Users.api.getAll.loading}"
+                    <button style="display: none;" type="submit" ng-class="{'active': Hyphen.Users.api.getAll.loading}"
                             class="btn btn-default has-spinner" ng-click="loadUsers()">
                         <span class="spinner"><i class="fa fa-refresh fa-spin"></i></span>Load Users
                     </button>
@@ -27,7 +27,7 @@
                     </button>
                 </div>
                 <div class="btn-group">
-                    <button type="submit" ng-class="{'active': Hyphen.Users.api.getUserProjects.loading}"
+                    <button style="display: none;" type="submit" ng-class="{'active': Hyphen.Users.api.getUserProjects.loading}"
                             class="btn btn-default has-spinner" ng-click="getUserProjects()">
                         <span class="spinner"><i class="fa fa-refresh fa-spin"></i></span>Get User Projects
                     </button>
