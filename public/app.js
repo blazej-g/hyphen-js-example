@@ -106,7 +106,9 @@ timeminder.config(['$urlRouterProvider', '$stateProvider', function ($urlRouterP
             params: {requireAuthorization: true, menuVisibility: true},
             resolve: {
                 data: ['Hyphen', function (Hyphen) {
-                    return Hyphen.Projects.api.getAll.call();
+                    return Hyphen.Projects.api.getAll.call().then(function(){
+                        Hyphen.synchronize();
+                    });
                     //return Hyphen.enqueue([{method: Hyphen.Projects.api.getAll, data: null, params: null}]);
                 }]
             }
@@ -118,7 +120,9 @@ timeminder.config(['$urlRouterProvider', '$stateProvider', function ($urlRouterP
             params: {requireAuthorization: true, menuVisibility: true},
             resolve: {
                 data: ['Hyphen', '$q', function (Hyphen, $q) {
-                    return $q.all([Hyphen.Users.api.getAll.call(),  Hyphen.Projects.api.getAll.call()]);
+                    return $q.all([Hyphen.Users.api.getAll.call(),  Hyphen.Projects.api.getAll.call()]).then(function(){
+                        Hyphen.synchronize();
+                    });;
                     //return Hyphen.enqueue([{method: Hyphen.Users.api.getAll, data: null, params: null}, {method: Hyphen.Projects.api.getAll, data: null, params: null}]);
                 }]
             }

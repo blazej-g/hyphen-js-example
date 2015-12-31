@@ -49,7 +49,7 @@ var jsHyphen = angular.module('jsHyphen', []);
                 });
 
                 HyphenIndexDb.openEvent(function (event) {
-                    if (!hyphenIndexDb)
+                    if (!HyphenIndexDb.isInitialized())
                         return;
                     // var db_stores = event.target.result.objectStoreNames
                     if (navigator.onLine) {

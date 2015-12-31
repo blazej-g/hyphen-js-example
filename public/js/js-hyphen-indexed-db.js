@@ -28,6 +28,10 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
 
     }
 
+    IndexedDbCommandBase.prototype.isInitialized = function (request) {
+            return this.db;
+    }
+
     IndexedDbCommandBase.prototype.registerPromise = function (request) {
         var promise = new Promise(function (resolve, reject) {
             request.onsuccess = function (event) {
@@ -290,6 +294,11 @@ jsHyphen.factory("HyphenIndexDb", ['IndexedDbCommands', function (IndexedDbComma
     HyphenIndexDb.addOrUpdateRecord = function (record, store, id) {
         return indexedDb.addOrUpdateRecord(record, store, id);
     }
+    HyphenIndexDb.isInitialized = function () {
+        return indexedDb.isInitialized();
+    }
+
+
 
     return HyphenIndexDb;
 }]);
