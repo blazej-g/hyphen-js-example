@@ -80,10 +80,18 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
         function (event, toState, toParams, fromState, fromParams) {
             $rootScope.menuVisibility = toParams.menuVisibility;
             $rootScope.active = toState.name;
+            if (toParams.requireAuthorization && sessionStorage.getItem("token")) {
+                Hyphen.synchronize();
+                console.log("synchronizing");
+            }
             if (toParams.requireAuthorization && !sessionStorage.getItem("token")) {
                 $rootScope.menuVisibility=false;
                 $state.go("sign_in");
                     event.preventDefault();
+
+
+            }else{
+
             }
         });
 }]);
@@ -98,7 +106,8 @@ timeminder.config(['$urlRouterProvider', '$stateProvider', function ($urlRouterP
             params: {requireAuthorization: true, menuVisibility: true},
             resolve: {
                 data: ['Hyphen', function (Hyphen) {
-                    return Hyphen.enqueue([{method: Hyphen.Projects.api.getAll, data: null, params: null}]);
+                    return Hyphen.Projects.api.getAll.call();
+                    //return Hyphen.enqueue([{method: Hyphen.Projects.api.getAll, data: null, params: null}]);
                 }]
             }
         })
@@ -109,7 +118,8 @@ timeminder.config(['$urlRouterProvider', '$stateProvider', function ($urlRouterP
             params: {requireAuthorization: true, menuVisibility: true},
             resolve: {
                 data: ['Hyphen', '$q', function (Hyphen, $q) {
-                    return Hyphen.enqueue([{method: Hyphen.Users.api.getAll, data: null, params: null}, {method: Hyphen.Projects.api.getAll, data: null, params: null}]);
+                    return $q.all([Hyphen.Users.api.getAll.call(),  Hyphen.Projects.api.getAll.call()]);
+                    //return Hyphen.enqueue([{method: Hyphen.Users.api.getAll, data: null, params: null}, {method: Hyphen.Projects.api.getAll, data: null, params: null}]);
                 }]
             }
 
@@ -125,12 +135,12 @@ timeminder.config(['$urlRouterProvider', '$stateProvider', function ($urlRouterP
             templateUrl: "modules/sign-in/sign-in-view.html",
             controller: 'SignInCtrl',
             params: {requireAuthorization: false, menuVisibility: false},
-        })
-           // .state('start', {
-            //url: "",
-            //templateUrl: "modules/sign-in/sign-in-view.html",
-            //controller: 'SignInCtrl',
-            //params: {requireAuthorization: false, menuVisibility: false}
+        });
+          //  .state('start', {
+           // url: "",
+           // templateUrl: "modules/sign-in/sign-in-view.html",
+           // controller: 'SignInCtrl',
+          //  params: {requireAuthorization: false, menuVisibility: false}
     //});
 
     $urlRouterProvider.otherwise("/users");

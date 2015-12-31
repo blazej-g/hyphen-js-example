@@ -27,7 +27,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
 
     HyphenDataModel.prototype.getData = function () {
         return _(this.data).filter(function (el) {
-            return el.action!="deleted";
+            return el.action != "deleted";
         })
     }
 
@@ -36,15 +36,15 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
         var key = this.model.key;
         var data = Array.isArray(data) ? data : [data];
         _(data).each(function (record) {
-            if ((navigator.onLine && !window.hjom) || record.action=="new") {
-                HyphenIndexDb.deleteRecord(self.modelName, record[key]);
+            if ((navigator.onLine && !window.hjom) || record.action == "new") {
+                //HyphenIndexDb.deleteRecord(self.modelName, record[key]);
                 var id = (record && record[key]) ? record[key] : record;
                 this.data = _(this.data).filter(function (element) {
                     return element[key] != id;
                 });
             } else {
                 record.action = "deleted";
-                HyphenIndexDb.updateRecordStore(record, self.modelName, record[key]);
+                HyphenIndexDb.addOrUpdateRecord(record, self.modelName, record[key]);
                 var id = (record && record[key]) ? record[key] : record;
                 this.data = _(this.data).map(function (element) {
                     if (element[key] == id) {
@@ -76,19 +76,24 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
             });
 
             if (existEl) {
-                if (!navigator.onLine || window.hjom)
+                if (!navigator.onLine)
                     if (record.action != "new")
                         record.action = "updated";
-                self.data[index] = _.extend(new self.model(record), record);;
+                self.data[index] = _.extend(new self.model(record), record);
+                ;
 
-                HyphenIndexDb.updateRecordStore(record, self.modelName, record[key]);
+                if (!navigator.onLine) {
+                    HyphenIndexDb.updateRecordStore(record, self.modelName, record[key]);
+                }
             } else {
-                if (!navigator.onLine || window.hjom)
+                if (!navigator.onLine)
                     record.action = "new";
 
                 record = _.extend(new self.model(record), record);
                 self.data.push(record);
-                HyphenIndexDb.addRecordToStore(record, self.modelName);
+                if (!navigator.onLine) {
+                    HyphenIndexDb.addRecordToStore(record, self.modelName);
+                }
             }
         });
 

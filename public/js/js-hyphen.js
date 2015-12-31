@@ -27,14 +27,17 @@ var jsHyphen = angular.module('jsHyphen', []);
 
             service.initialize = function (configuration) {
                 var self = this;
+                this.configuration = configuration;
                 hyphenConfiguration = configuration;
 
                 configuration.model.forEach(function (entity) {
                     service[entity.model] = new BasicModel(entity, configuration);
                     stores.push({name: entity.model, key: entity.key, priority: entity.priority, sync: entity.sync});
                 });
+            };
 
-                hyphenIndexDb = new HyphenIndexDb(configuration.dbName, configuration.dbVersion, stores);
+            service.synchronize = function () {
+                hyphenIndexDb = new HyphenIndexDb(this.configuration.dbName, this.configuration.dbVersion, stores);
                 HyphenIndexDb.upgradeEvent(function (event) {
                     _(stores).each(function (st) {
                         if (!_(event.target.transaction.db.objectStoreNames).contains(st.name)) {
@@ -46,25 +49,39 @@ var jsHyphen = angular.module('jsHyphen', []);
                 });
 
                 HyphenIndexDb.openEvent(function (event) {
+                    if (!hyphenIndexDb)
+                        return;
                     // var db_stores = event.target.result.objectStoreNames
-                    HyphenIndexDb.initialized = true;
-                    var prom = readFromIndexDb(stores);
-                    prom.then(function (data) {
-                        _(stores).each(function (store) {
-                            HyphenIndexDb.clear(store.name);
-                        });
-                        loadData();
-                        console.log("Load data and start app");
-                    }, function (reason) {
+                    if (navigator.onLine) {
+                        var prom = readFromIndexDb(stores);
+                        prom.then(function (data) {
+                            _(stores).each(function (store) {
+                                HyphenIndexDb.clear(store.name);
+                            });
 
-                    });
+                            HyphenIndexDb.initialized = true;
+                            loadData();
+                            console.log("Load data and start app");
+                        }, function (reason) {
+                            console.log(reason);
+                        });
+                    } else {
+                        console.error("app is in offline state");
+                    }
 
                 });
-            };
+            }
 
             window.addEventListener('online', function () {
-                HyphenIndexDb.getStores();
-                readFromIndexDb(stores);
+                var prom = readFromIndexDb(stores);
+                prom.then(function (data) {
+                    _(stores).each(function (store) {
+                        HyphenIndexDb.clear(store.name);
+                    });
+                    console.log("synchronize");
+                }, function (reason) {
+                    console.log(reason);
+                });
             });
 
             window.addEventListener('offline', function () {
@@ -120,6 +137,7 @@ var jsHyphen = angular.module('jsHyphen', []);
                         });
                         if (dbData.sync) {
                             syncQue.push({
+                                name: dbData.model,
                                 syncNew: entityModel.syncNew,
                                 syncUpdated: entityModel.syncUpdated,
                                 syncDeleted: entityModel.syncDeleted,
@@ -151,6 +169,8 @@ var jsHyphen = angular.module('jsHyphen', []);
                     var syncDeleted = item.syncDeleted(item.deleteData);
 
                     $q.all([syncNewPromise, syncUpdatedPromise, syncDeleted]).then(function () {
+                        //clear synced store
+                        //HyphenIndexDb.clear(item.name);
                         promisesList.shift();
                         promiseQueChain(promisesList);
                     }, function (reason) {
@@ -178,10 +198,15 @@ var jsHyphen = angular.module('jsHyphen', []);
             }
 
             service.enqueue = function (enqueueList) {
-                enqueuedActionsList = enqueueList;
-                self.defer = $q.defer();
-                if (HyphenIndexDb.initialized)
-                    loadData();
+                if (navigator.onLine) {
+                    enqueuedActionsList = enqueueList;
+                    self.defer = $q.defer();
+                    if (HyphenIndexDb.initialized)
+                        loadData();
+                } else {
+                    console.error("app is offline");
+                    self.defer.resolve("app is offline");
+                }
                 return self.defer.promise;
             }
 
