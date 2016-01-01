@@ -36,22 +36,31 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
         var key = this.model.key;
         var data = Array.isArray(data) ? data : [data];
         _(data).each(function (record) {
-            if ((navigator.onLine && !window.hjom) || record.action == "new") {
+            if (navigator.onLine) {
                 //HyphenIndexDb.deleteRecord(self.modelName, record[key]);
                 var id = (record && record[key]) ? record[key] : record;
                 this.data = _(this.data).filter(function (element) {
                     return element[key] != id;
                 });
             } else {
-                record.action = "deleted";
-                HyphenIndexDb.addOrUpdateRecord(record, self.modelName, record[key]);
-                var id = (record && record[key]) ? record[key] : record;
-                this.data = _(this.data).map(function (element) {
-                    if (element[key] == id) {
-                        element.action = "deleted";
-                    }
-                    return element;
-                });
+                if (record.action == "new") {
+                    HyphenIndexDb.deleteRecord(self.modelName, record[key]);
+                    var id = (record && record[key]) ? record[key] : record;
+                    this.data = _(this.data).filter(function (element) {
+                        return element[key] != id;
+                    });
+                }
+                else {
+                    record.action = "deleted";
+                    HyphenIndexDb.addOrUpdateRecord(record, self.modelName, record[key]);
+                    var id = (record && record[key]) ? record[key] : record;
+                    this.data = _(this.data).map(function (element) {
+                        if (element[key] == id) {
+                            element.action = "deleted";
+                        }
+                        return element;
+                    });
+                }
             }
         }, this);
 
@@ -68,7 +77,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
         _(data).each(function (record) {
             var index;
             if (!record[key])
-                throw new Error("Key is not defined for '" + self.modelName + "', record cannot be added");
+                throw new Error("Key is not defined for '" + self.modelName + "', record cannot be added. Record" + record);
 
             var existEl = _(self.data).find(function (el, ind) {
                 index = ind;
