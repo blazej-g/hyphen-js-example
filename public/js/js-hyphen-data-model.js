@@ -45,22 +45,32 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
             } else {
                 if (record.action == "new") {
                     HyphenIndexDb.deleteRecord(self.modelName, record[key]);
-                    var id = (record && record[key]) ? record[key] : record;
-                    this.data = _(this.data).filter(function (element) {
-                        return element[key] != id;
-                    });
+                    /*
+                     var id = (record && record[key]) ? record[key] : record;
+                     this.data = _(this.data).filter(function (element) {
+                     return element[key] != id;
+                     });
+                     */
                 }
                 else {
                     record.action = "deleted";
                     HyphenIndexDb.addOrUpdateRecord(record, self.modelName, record[key]);
-                    var id = (record && record[key]) ? record[key] : record;
-                    this.data = _(this.data).map(function (element) {
-                        if (element[key] == id) {
-                            element.action = "deleted";
-                        }
-                        return element;
-                    });
+                    /*
+                     var id = (record && record[key]) ? record[key] : record;
+                     this.data = _(this.data).map(function (element) {
+                     if (element[key] == id) {
+                     element.action = "deleted";
+                     }
+                     return element;
+                     });
+                     */
                 }
+
+                var id = (record && record[key]) ? record[key] : record;
+                this.data = _(this.data).filter(function (element) {
+                    return element[key] != id;
+                });
+
             }
         }, this);
 
