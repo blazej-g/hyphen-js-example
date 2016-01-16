@@ -7,17 +7,20 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
 
     var dataModel = [
         {
-
             model: "Users",
             priority: 0,
             sync: true,
             key: "_id",
             rest: [
-                {name: "signIn", url: "users/login", method: "post", processResponse: false},
+                {
+                    name: "signIn", url: "users/login", method: "post", responseHandler: function (data, hyphenModels) {
+                    sessionStorage.setItem("current-user", data.user._id);
+                }
+                },
                 {name: "update", url: "users/update", method: "put"},
                 {name: "create", url: "users/create", method: "post"},
                 {name: "registerUser", url: "users/register", method: "post"},
-                {name: "getAll", url: "users", method: "get"},
+                {name: "getAll", url: "users", method: "get", cache: true},
                 {name: "delete", url: "users/:id", method: "delete"},
                 {name: "getOne", url: "users/:id", method: "get"},
                 {name: "removeAll", url: "users/remove_all", method: "post", action: "delete"},
@@ -41,11 +44,12 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
             priority: 1,
             rest: [
                 {name: "create", url: "projects/create", method: "post"},
-                {name: "getAll", url: "projects", method: "get"},
+                {name: "getAll", url: "projects", method: "get", cache: true},
                 {name: "removeAll", url: "projects/remove_all", method: "post", action: "delete"},
             ],
 
-        }
+        },
+
     ];
 
     var timestamp = new Date / 1e3 | 0;
@@ -61,9 +65,9 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
             config.headers = {Authorization: token};
             return config;
         },
-        responseInterceptor: function () {
-            throw new Error("Not implemented");
-        }
+        responseInterceptor: function (data, config, store) {
+            return data;
+        },
     }
 
     Hyphen.initialize(configuration);
@@ -99,13 +103,14 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
     $rootScope.$on('$stateChangeSuccess',
         function (event, toState, toParams, fromState, fromParams) {
             if (toParams.requireAuthorization && sessionStorage.getItem("token")) {
-                Hyphen.synchronize();
-                console.log("data synchronized");
+                Hyphen.initializeDb(sessionStorage.getItem("current-user"));
+            }
+
+            if (toState.name == "sign_in") {
+                Hyphen.dispose();
             }
         });
 }]);
-
-
 
 timeminder.config(['$urlRouterProvider', '$stateProvider', function ($urlRouterProvider, $stateProvider) {
 
@@ -165,6 +170,7 @@ timeminder.config(['$urlRouterProvider', '$stateProvider', function ($urlRouterP
 
 timeminder.controller('navCtrl', ['$scope', 'Hyphen', '$state', function ($scope, Hyphen, $state) {
     $scope.signOut = function () {
+        Hyphen.dispose();
         sessionStorage.clear();
         $state.go("sign_in");
     }

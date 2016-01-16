@@ -3,18 +3,19 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
         var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
         var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction || {READ_WRITE: "readwrite"}; // This line should only be needed if it is needed to support the object's constants for older browsers
         var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
-        var request;
         var selfObj = this;
-        request = window.indexedDB.open(name, version);
+        var request = window.indexedDB.open(name, version);
 
         request.onsuccess = function (event) {
             selfObj.db = event.target.result;
             selfObj.stores = event.target.result.objectStoreNames;
             if (selfObj.openEvent)
                 selfObj.openEvent(event);
+            console.log("Local db initialized");
+
         }
         request.onerror = function (event) {
-
+            console.log(event);
         };
         request.onupgradeneeded = function (event) {
             selfObj.db = event.target.result;
@@ -23,13 +24,13 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
         };
 
         request.oncomplete = function (event) {
-
+            console.log(event);
         }
 
     }
 
     IndexedDbCommandBase.prototype.isInitialized = function (request) {
-            return this.db;
+        return this.db ? true : false;
     }
 
     IndexedDbCommandBase.prototype.registerPromise = function (request) {
@@ -66,8 +67,10 @@ jsHyphen.factory("IndexedDbCommands", ['$q', 'IndexedDbCommandBase', function ($
     }
 
     IndexedDbCommands.prototype.closeDb = function () {
-        if (this.db)
+        if (this.db) {
             this.db.close();
+            this.db = null;
+        }
     }
 
     IndexedDbCommands.prototype.clearStores = function (stores, realStores) {
@@ -172,18 +175,18 @@ jsHyphen.factory("IndexedDbCommands", ['$q', 'IndexedDbCommandBase', function ($
     }
 
     IndexedDbCommands.prototype.addOrUpdateRecord = function (record, store, id) {
-        var self=this;
+        var self = this;
         var transaction = this.db.transaction(store, "readwrite");
         var storeObject = transaction.objectStore(store);
-        var request = storeObject.get(record._id);
-        request.onerror = function(event) {
+        var request = storeObject.get(id);
+        request.onerror = function (event) {
             console.log('can not retrive record ' + record);
         };
-        request.onsuccess = function(event) {
+        request.onsuccess = function (event) {
             // Do something with the request.result!
-            if(request.result){
+            if (request.result) {
                 self.updateRecord(record, store, id);
-            }else{
+            } else {
                 self.addRecord(record, store);
             }
         };
@@ -295,10 +298,15 @@ jsHyphen.factory("HyphenIndexDb", ['IndexedDbCommands', function (IndexedDbComma
         return indexedDb.addOrUpdateRecord(record, store, id);
     }
     HyphenIndexDb.isInitialized = function () {
-        return indexedDb.isInitialized();
+        if (indexedDb)
+            return indexedDb.isInitialized();
+        else
+            false;
     }
-
-
+    HyphenIndexDb.closeDb = function () {
+        if (indexedDb)
+            indexedDb.closeDb();
+    }
 
     return HyphenIndexDb;
 }]);

@@ -31,6 +31,12 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
         })
     }
 
+    HyphenDataModel.prototype.where = function (condition) {
+        return _(this.data).filter(function (el) {
+            return el[condition.prop] == condition.value;
+        })
+    }
+
     HyphenDataModel.prototype.remove = function (data) {
         var self = this;
         var key = this.model.key;
@@ -45,25 +51,10 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
             } else {
                 if (record.action == "new") {
                     HyphenIndexDb.deleteRecord(self.modelName, record[key]);
-                    /*
-                     var id = (record && record[key]) ? record[key] : record;
-                     this.data = _(this.data).filter(function (element) {
-                     return element[key] != id;
-                     });
-                     */
                 }
                 else {
                     record.action = "deleted";
                     HyphenIndexDb.addOrUpdateRecord(record, self.modelName, record[key]);
-                    /*
-                     var id = (record && record[key]) ? record[key] : record;
-                     this.data = _(this.data).map(function (element) {
-                     if (element[key] == id) {
-                     element.action = "deleted";
-                     }
-                     return element;
-                     });
-                     */
                 }
 
                 var id = (record && record[key]) ? record[key] : record;
@@ -116,15 +107,6 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
             }
         });
 
-        /*
-         this.data = _(data).chain().map(function (val) {
-         //extend given objects
-         return _.extend(new this.model(val), val);
-         }, this).
-         concat(this.data).uniq(false, function (element) {
-         return element[key];
-         }).value();
-         */
         clearIndexes.call(this);
     };
 
