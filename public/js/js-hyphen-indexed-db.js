@@ -1,16 +1,20 @@
 jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
     var IndexedDbCommandBase = function (name, version) {
-        var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
-        var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction || {READ_WRITE: "readwrite"}; // This line should only be needed if it is needed to support the object's constants for older browsers
-        var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
         var selfObj = this;
+        this.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+
+        if (!this.indexedDB) {
+            console.log("Indexed db not supported, offline mode not supported");
+        }
+
         var request = window.indexedDB.open(name, version);
 
         request.onsuccess = function (event) {
             selfObj.db = event.target.result;
             selfObj.stores = event.target.result.objectStoreNames;
-            if (selfObj.openEvent)
+            if (selfObj.openEvent) {
                 selfObj.openEvent(event);
+            }
             console.log("Local db initialized");
 
         }
@@ -19,8 +23,9 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
         };
         request.onupgradeneeded = function (event) {
             selfObj.db = event.target.result;
-            if (selfObj.upgradeEvent)
+            if (selfObj.upgradeEvent) {
                 selfObj.upgradeEvent(event);
+            }
         };
 
         request.oncomplete = function (event) {
@@ -29,7 +34,7 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
 
     }
 
-    IndexedDbCommandBase.prototype.isInitialized = function (request) {
+    IndexedDbCommandBase.prototype.isInitialized = function () {
         return this.db ? true : false;
     }
 
@@ -56,15 +61,11 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
 }]);
 
 jsHyphen.factory("IndexedDbCommands", ['$q', 'IndexedDbCommandBase', function ($q, IndexedDbCommandBase) {
-    var IndexedDbCommands = function (name, version, stores) {
+    var IndexedDbCommands = function (name, version) {
         IndexedDbCommandBase.call(this, name, version);
     }
 
     IndexedDbCommands.prototype = Object.create(IndexedDbCommandBase.prototype);
-
-    IndexedDbCommands.prototype.openDataBase = function (version) {
-
-    }
 
     IndexedDbCommands.prototype.closeDb = function () {
         if (this.db) {
@@ -99,7 +100,7 @@ jsHyphen.factory("IndexedDbCommands", ['$q', 'IndexedDbCommandBase', function ($
             });
 
         } else {
-            promise = new Promise(function (resolve, reject) {
+            promise = new Promise(function (resolve) {
                 resolve();
             });
         }
@@ -127,7 +128,6 @@ jsHyphen.factory("IndexedDbCommands", ['$q', 'IndexedDbCommandBase', function ($
         var transaction = this.db.transaction(store, "readwrite");
         var dbStore = transaction.objectStore(store);
         var request = dbStore.openCursor();
-        var deferred = $q.defer();
         request.onsuccess = function (event) {
             var cursor = event.target.result;
             if (cursor) {
@@ -179,10 +179,10 @@ jsHyphen.factory("IndexedDbCommands", ['$q', 'IndexedDbCommandBase', function ($
         var transaction = this.db.transaction(store, "readwrite");
         var storeObject = transaction.objectStore(store);
         var request = storeObject.get(id);
-        request.onerror = function (event) {
-            console.log('can not retrive record ' + record);
+        request.onerror = function () {
+            console.log('can not get record ' + record);
         };
-        request.onsuccess = function (event) {
+        request.onsuccess = function () {
             // Do something with the request.result!
             if (request.result) {
                 self.updateRecord(record, store, id);
@@ -195,26 +195,19 @@ jsHyphen.factory("IndexedDbCommands", ['$q', 'IndexedDbCommandBase', function ($
     IndexedDbCommands.prototype.updateRecord = function (data, store, id) {
         var objectStore = this.db.transaction(store, "readwrite").objectStore(store);
         var request = objectStore.get(id);
-        request.onsuccess = function (event) {
-            var requestUpdate = objectStore.put(data);
+        request.onsuccess = function () {
+            objectStore.put(data);
         };
     }
 
     IndexedDbCommands.prototype.deleteRecord = function (store, id) {
         var objectStore = this.db.transaction(store, "readwrite").objectStore(store);
-        var request = objectStore.delete(id);
-        request.onsuccess = function (event) {
-            // var requestUpdate = objectStore.put(data);
-        };
+        objectStore.delete(id);
     }
 
-    IndexedDbCommands.prototype.removeData = function () {
-
-    }
-
-    IndexedDbCommands.prototype.getStoreData = function (store, priority, sync) {
-        var transaction = this.db.transaction(store, "readwrite");
-        var dbStore = transaction.objectStore(store);
+    IndexedDbCommands.prototype.getStoreData = function (store) {
+        var transaction = this.db.transaction(store.name, "readwrite");
+        var dbStore = transaction.objectStore(store.name);
         var request = dbStore.openCursor();
         var data = [];
         var deferred = $q.defer();
@@ -224,7 +217,7 @@ jsHyphen.factory("IndexedDbCommands", ['$q', 'IndexedDbCommandBase', function ($
                 data.push(cursor.value);
                 cursor.continue();
             } else {
-                deferred.resolve({model: store, data: data, priority: priority, sync: sync});
+                deferred.resolve({data: data, model: store});
             }
         }
         request.onerror = function (event) {
@@ -244,16 +237,12 @@ jsHyphen.factory("HyphenIndexDb", ['IndexedDbCommands', function (IndexedDbComma
         indexedDb = new IndexedDbCommands(name, version, stores);
     };
 
-    HyphenIndexDb.openDb = function (version) {
-        return indexedDb.openDataBase(version);
-    }
-
     HyphenIndexDb.clearStores = function (stores, realStores) {
         return indexedDb.clearStores(stores, realStores);
     }
 
-    HyphenIndexDb.getStoreData = function (store, priority, sync) {
-        return indexedDb.getStoreData(store, priority, sync);
+    HyphenIndexDb.getStoreData = function (store) {
+        return indexedDb.getStoreData(store);
     }
 
     HyphenIndexDb.createStores = function (stores) {
@@ -298,14 +287,17 @@ jsHyphen.factory("HyphenIndexDb", ['IndexedDbCommands', function (IndexedDbComma
         return indexedDb.addOrUpdateRecord(record, store, id);
     }
     HyphenIndexDb.isInitialized = function () {
-        if (indexedDb)
+        if (indexedDb) {
             return indexedDb.isInitialized();
-        else
-            false;
+        }
+        else {
+            return false;
+        }
     }
     HyphenIndexDb.closeDb = function () {
-        if (indexedDb)
+        if (indexedDb) {
             indexedDb.closeDb();
+        }
     }
 
     return HyphenIndexDb;

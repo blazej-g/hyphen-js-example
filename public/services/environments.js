@@ -6,7 +6,7 @@ timeminder.service('Environments', ['$location', function ($location) {
         {
             name: "localhost",
             url: "localhost",
-            api: "http://localhost:3000/",
+            api: "http://localhost:3000",
             debugging: false,
         },
         {
