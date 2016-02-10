@@ -12,46 +12,20 @@ jsHyphen.factory('Users', ['Hyphen', '$timeout', '$q', function (Hyphen, $timeou
 
     User.indexes = [{name: "Id", key: "_id"}, {name: "FirstName", key: "user_first_name"}];
 
-    User.syncNew = function (data) {
-        var proms = [];
+    User.new = function (record) {
+        delete record._id;
+        Hyphen.Users.api.create.data = record;
+        return Hyphen.Users.api.create.call()
+    }
 
-        _(data).each(function (record) {
-            var id = record._id
-            delete record._id;
-            Hyphen.Users.api.registerUser.data = record;
-            var p = Hyphen.Users.api.registerUser.call();
-            p.then(function (data) {
-                var user = Hyphen.Users.dataModel.getById(id);
-                if (user)
-                    Hyphen.Users.dataModel.remove(user);
-            });
-            proms.push(p);
-        });
+    User.update = function (record) {
+        Hyphen.Users.api.update.data = record;
+        return Hyphen.Users.api.update.call();
+    }
 
-        return $q.all(proms);
-    };
-
-    User.syncUpdated = function (data) {
-        var proms = [];
-
-        _(data).each(function (record) {
-            Hyphen.Users.api.update.data = record;
-            var p = Hyphen.Users.api.update.call();
-            proms.push(p);
-        });
-
-        return $q.all(proms);
-    };
-
-    User.syncDeleted = function (data) {
-        var proms = [];
-        _(data).each(function (record) {
-            var p = Hyphen.Users.api.delete.call(record._id);
-            proms.push(p);
-        });
-
-        return $q.all(proms);
-    };
+    User.delete = function (record) {
+        return Hyphen.Users.api.delete.call(record._id);
+    }
 
     User.getAllOffline = function (params, data, dataModel) {
         console.log("this is handler for get users offline");

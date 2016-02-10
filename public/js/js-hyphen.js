@@ -10,24 +10,25 @@ var jsHyphen = angular.module('jsHyphen', []);
         provider.initialize = function () {
 
         };
-        provider.$get = ['$http', '$q', 'BasicModel', 'HyphenIndexDb', '$injector', '$timeout', 'CacheService', 'HyphenSynchronizer',
-            function ($http, $q, BasicModel, HyphenIndexDb, $injector, $timeout, CacheService, HyphenSynchronizer) {
+        provider.$get = ['$rootScope', '$http', '$q', 'BasicModel', 'HyphenIndexDb', '$injector', '$timeout', 'CacheService', 'HyphenSynchronizer', 'OfflineOnlineService',
+            function ($rootScope, $http, $q, BasicModel, HyphenIndexDb, $injector, $timeout, CacheService, HyphenSynchronizer, OfflineOnlineService) {
                 var service = {};
                 var hyphenConfiguration;
                 var hyphenIndexDb;
                 var stores = [];
-                var syncStart, syncEnd;
-
-                service.syncStartEvent = function (fun) {
-                    syncStart = fun;
-                };
-                service.syncEndEvent = function (fun) {
-                    syncEnd = fun;
-                };
+                var hyphenSynchronizer;
 
                 service.initialize = function (configuration) {
                     this.configuration = configuration;
                     hyphenConfiguration = configuration;
+                    hyphenSynchronizer = new HyphenSynchronizer(configuration);
+
+                    service.switchToOffline = function () {
+                        OfflineOnlineService.setOffline();
+                    };
+                    service.switchToOnline = function () {
+                        OfflineOnlineService.setOnline();
+                    };
 
                     configuration.model.forEach(function (entity) {
                         service[entity.model] = new BasicModel(entity, configuration);
@@ -36,7 +37,8 @@ var jsHyphen = angular.module('jsHyphen', []);
                                 name: entity.model,
                                 key: entity.key,
                                 priority: entity.priority,
-                                sync: entity.sync
+                                sync: entity.sync,
+                                foreignKeys: entity.foreignKeys
                             });
                         }
                     });
@@ -67,52 +69,19 @@ var jsHyphen = angular.module('jsHyphen', []);
                         //event called from indexed db
                         HyphenIndexDb.openEvent(function () {
                             readFromIndexDb(stores);
-                            /*
-                             prom.then(function () {
-                             _(stores).each(function (store) {
-                             HyphenIndexDb.clear(store.name);
-                             });
-
-                             HyphenIndexDb.initialized = true;
-                             console.log("Load data and start app");
-                             }, function (reason) {
-                             //clear stores even when sync fail
-                             _(stores).each(function (store) {
-                             HyphenIndexDb.clear(store.name);
-                             });
-                             console.log(reason);
-                             });
-                             */
                         });
                     } else {
                         console.log("db already initialized");
                     }
                 };
 
-                window.addEventListener('online', function () {
+                $rootScope.$on('hyphenOnline', function (event) {
                     if (hyphenIndexDb) {
-                        $timeout(function () {
-                            readFromIndexDb(stores);
-                            /*
-                             prom.then(function (data) {
-                             _(stores).each(function (store) {
-                             HyphenIndexDb.clear(store.name);
-                             });
-                             console.log("synchronize " + data);
-                             }, function (reason) {
-                             console.log(reason);
-                             });
-                             */
-                        }, 5000);
+                        readFromIndexDb(stores);
                     }
                 });
 
-                window.addEventListener('offline', function () {
-                    console.log("is offline");
-                });
-
                 var syncModelsPromise;
-                var dataToSync = [];
                 var readFromIndexDb = function (dbStores) {
                     syncModelsPromise = $q.defer();
                     var readPromises = [];
@@ -122,110 +91,10 @@ var jsHyphen = angular.module('jsHyphen', []);
                     });
 
                     $q.all(readPromises).then(function (result) {
-                        var sync = new HyphenSynchronizer(result).synchronize();
+                        hyphenSynchronizer.synchronize(result);
                     });
+
                     return readPromises;
-                }
-
-                var synchronizeData = function () {
-                    $q.all(readPromises).then(function (result) {
-                        var syncQue = [];
-                        dataToSync = [];
-                        _(result).each(function (dbData) {
-                            var entityModel;
-                            try {
-                                entityModel = $injector.get(dbData.model);
-                            } catch (e) {
-                                entityModel = $injector.get('DefaultModel');
-                            }
-
-                            if (!entityModel.syncNew) {
-                                throw Error("Not defined synchronise method for 'syncNew' for model " + dbData.model);
-                            }
-
-                            if (!entityModel.syncUpdated) {
-                                throw Error("Not defined synchronise method for 'syncUpdated' for model " + dbData.model);
-                            }
-
-                            if (!entityModel.syncDeleted) {
-                                throw Error("Not defined synchronise method for 'syncDeleted' for model " + dbData.model);
-                            }
-
-                            var newData = [];
-                            var updateData = [];
-                            var deleteData = [];
-
-                            _(dbData.data).each(function (record) {
-                                dataToSync.push(record);
-                                if (syncStart) {
-                                    syncStart();
-                                }
-                                if (record.action === "new") {
-                                    newData.push(record);
-                                }
-                                if (record.action === "updated") {
-                                    updateData.push(record);
-                                }
-                                if (record.action === "deleted") {
-                                    deleteData.push(record);
-                                }
-                            });
-                            if (dbData.sync) {
-                                syncQue.push({
-                                    name: dbData.model,
-                                    syncNew: entityModel.syncNew,
-                                    syncUpdated: entityModel.syncUpdated,
-                                    syncDeleted: entityModel.syncDeleted,
-                                    newData: newData,
-                                    updateData: updateData,
-                                    deleteData: deleteData,
-                                    priority: dbData.priority
-                                });
-                            }
-                        });
-
-                        if (dataToSync.length > 0) {
-                            syncQue = _(syncQue).sortBy(function (d) {
-                                return d.priority;
-                            });
-                            promiseQueChain(syncQue);
-                        }
-                        else {
-                            if (syncEnd) {
-                                syncEnd(dataToSync);
-                            }
-                            syncModelsPromise.resolve(dataToSync);
-                        }
-
-                    }, function (r) {
-                        console.log("Cannot read from db. Error: " + r);
-                    });
-
-                    return syncModelsPromise.promise;
-                };
-
-                var promiseQueChain = function (promisesList) {
-                    var item = promisesList[0];
-                    if (item) {
-                        var syncNewPromise = item.syncNew(item.newData);
-                        var syncUpdatedPromise = item.syncUpdated(item.updateData);
-                        var syncDeleted = item.syncDeleted(item.deleteData);
-
-                        $q.all([syncNewPromise, syncUpdatedPromise, syncDeleted]).then(function (data) {
-                            //clear synced store
-                            HyphenIndexDb.clear(item.name);
-                            promisesList.shift();
-                            promiseQueChain(promisesList);
-                        }, function (reason) {
-                            syncEnd(reason);
-                            syncModelsPromise.reject(reason);
-                        })
-                    } else {
-                        if (syncEnd) {
-                            syncEnd(dataToSync);
-                        }
-                        syncModelsPromise.resolve(dataToSync);
-                    }
                 }
 
                 return service;
@@ -233,61 +102,100 @@ var jsHyphen = angular.module('jsHyphen', []);
         return provider;
     }]);
 
-    jsHyphen.factory("HyphenSynchronizer", ['HyphenDataStore', '$injector', 'HyphenIndexDb', function (HyphenDataStore, $injector, HyphenIndexDb) {
-        var HyphenSynchronizer = function (stores) {
-            this.stores = stores;
+    jsHyphen.factory("HyphenSynchronizer", ['$rootScope', 'HyphenDataStore', '$injector', 'HyphenIndexDb', '$q', function ($rootScope, HyphenDataStore, $injector, HyphenIndexDb, $q) {
+
+        var HyphenSynchronizer = function (configuration) {
+            this.configuration = configuration;
         }
 
-        HyphenSynchronizer.prototype.synchronize = function () {
-            var self = this;
-            _(this.stores).each(function (syncStore) {
-                if (syncStore.data.length > 0) {
-                    var entitySyncModel = $injector.get(syncStore.model.name + "Sync");
-                    // if (entitySyncModel.syncRecord && entitySyncModel.syncStore)
-                    //     throw new Error("You can sync by record or by store, not by both. Model: " + syncStore.model);
+        HyphenSynchronizer.prototype.syncedStors = [];
 
-                    _(syncStore.data).each(function (record) {
-                        var id = record[syncStore.model.key];
-                        switch (record.action) {
-                            case "new":
-                                entitySyncModel.new(angular.copy(record)).then(function (result) {
-                                    self.updateIds(id, result.data[syncStore.model.key], syncStore.model.key);
-                                    HyphenDataStore.getStores()[syncStore.model.name].remove(id);
-                                    HyphenIndexDb.deleteRecord(syncStore.model.name, id);
-                                }, function (error) {
-                                    console.log("can not remove synchronized record for 'Add' action with id = " + record[self.syncStore.model.key] + error);
-                                });
-                                break;
-                            case "updated":
-                                entitySyncModel.update(record).then(function (result) {
-                                    HyphenIndexDb.deleteRecord(syncStore.model.name, id);
-                                }, function (error) {
-                                    console.log("can not remove synchronized record for 'Update' action with id = " + record[self.syncStore.model.key] + error);
-                                });
-                                break;
-                            case "deleted":
-                                entitySyncModel.delete(record).then(function (result) {
-                                    HyphenIndexDb.deleteRecord(syncStore.model.name, record[syncStore.model.key]);
-                                }, function (error) {
-                                    console.log("can not remove synchronized record for 'Delete' action with id = record[syncStore.model.key]. " + error);
-                                });
-
-                                break;
-                            default:
-                                console.log("action not defined");
-                        }
-
-                    })
-                }
+        HyphenSynchronizer.prototype.sortStores = function (stores) {
+            return _(stores).sortBy(function (d) {
+                return d.model.priority;
             });
         }
 
-        HyphenSynchronizer.prototype.updateIds = function (oldId, newId, key) {
+        HyphenSynchronizer.prototype.chainStoreSync = function (stores) {
+            var self = this;
+            var store = this.stores[0];
+            if (store) {
+                if (store.data.length > 0)
+                    self.syncedStors.push(angular.copy(store));
+                $rootScope.$broadcast("syncStoreStart", store);
+                self.synchronizeStore(store).then(function (result) {
+                    $rootScope.$broadcast("syncStoreSuccess", store, result);
+                    stores.shift();
+                    self.chainStoreSync(stores);
+                }, function (reason) {
+                    $rootScope.$broadcast("syncError", reason);
+                })
+            } else {
+                $rootScope.$broadcast("syncSuccess", self.syncedStors);
+                self.syncedStors = [];
+            }
+        }
+
+        HyphenSynchronizer.prototype.synchronize = function (stores) {
+            $rootScope.$broadcast("syncStart", stores);
+
+            this.stores = this.sortStores(stores);
+            this.chainStoreSync(this.stores);
+        }
+        HyphenSynchronizer.prototype.synchronizeStore = function (syncStore) {
+            var self = this;
+            var syncPromises = [];
+            if (syncStore.data.length > 0) {
+                var entitySyncModel = $injector.get(syncStore.model.name);
+                _(syncStore.data).each(function (record) {
+                    var promise;
+                    var id = record[syncStore.model.key];
+                    $rootScope.$broadcast("syncRecordStart", record);
+                    switch (record.action) {
+                        case "new":
+                            promise = entitySyncModel.new(angular.copy(record)).then(function (result) {
+                                self.updateIds(id, result.data[syncStore.model.key], syncStore.model.key, syncStore.model.foreignKeys);
+                                HyphenDataStore.getStores()[syncStore.model.name].remove(id);
+                                HyphenIndexDb.deleteRecord(syncStore.model.name, id);
+                                $rootScope.$broadcast("syncRecordSuccess", result);
+                            }, function (error) {
+                                console.log("can not remove synchronized record for 'Add' action with id = " + error);
+                            });
+                            break;
+                        case "updated":
+                            promise = entitySyncModel.update(record).then(function () {
+                                HyphenIndexDb.deleteRecord(syncStore.model.name, id);
+                                $rootScope.$broadcast("syncRecordSuccess", result);
+                            }, function (error) {
+                                console.log("can not remove synchronized record for 'Update' action with id = " + error);
+                            });
+                            break;
+                        case "deleted":
+                            promise = entitySyncModel.delete(record).then(function (result) {
+                                HyphenIndexDb.deleteRecord(syncStore.model.name, record[syncStore.model.key]);
+                                $rootScope.$broadcast("syncRecordSuccess", result);
+                            }, function (error) {
+                                console.log("can not remove synchronized record for 'Delete' action with id = record[syncStore.model.key]. " + error);
+                            });
+
+                            break;
+                        default:
+                            console.log("action not defined");
+                    }
+                    syncPromises.push(promise);
+                })
+            }
+            return $q.all(syncPromises);
+        }
+
+        HyphenSynchronizer.prototype.updateIds = function (oldId, newId, key, foreignKeys) {
             _(this.stores).each(function (store) {
                 _(store.data).each(function (data) {
-                    if (data[key] === oldId) {
-                        data[key] = newId;
-                    }
+                    _(foreignKeys).each(function (fKey) {
+                        if (Number(data[fKey]) === Number(oldId)) {
+                            data[fKey] = newId;
+                        }
+                    });
                 })
             });
         };
@@ -353,14 +261,14 @@ var jsHyphen = angular.module('jsHyphen', []);
         return HyphenDataStore;
     }]);
 
-    jsHyphen.factory("BasicModel", ['ApiCallFactory', 'HyphenDataStore', '$injector', '$q', 'CacheService', function
-        (ApiCallFactory, HyphenDataStore, $injector, $q, CacheService) {
+    jsHyphen.factory("BasicModel", ['ApiCallFactory', 'HyphenDataStore', '$injector', '$q', 'CacheService','OfflineOnlineService', function
+        (ApiCallFactory, HyphenDataStore, $injector, $q, CacheService, OfflineOnlineService) {
         var BasicModel = function (modelData, configuration) {
             this.entityModel = null;
             try {
                 this.entityModel = $injector.get(modelData.model);
             } catch (e) {
-                throw new Error("Model not defned for: " + modelData.model);
+                throw new Error("Model not defned for: " + modelData.model + e.message);
             }
             var dataStore = new HyphenDataStore(modelData.model, this.entityModel);
 
@@ -383,13 +291,15 @@ var jsHyphen = angular.module('jsHyphen', []);
                     var args = Array.prototype.slice.call(arguments);
                     var cacheItem = rest.name + modelData.model + args.join("");
 
-                    if (navigator.onLine) {
+                    if (OfflineOnlineService.getState()) {
                         if (!CacheService.isCached(cacheItem)) {
                             apiCall.dataSet = self.api[rest.name].data;
                             promise = apiCall.invoke.call(apiCall, params);
                             self.api[rest.name].loading = true;
+                            self.api[rest.name].loaded = false;
                             promise.then(function (result) {
                                 self.api[rest.name].loading = false;
+                                self.api[rest.name].loaded = true;
 
                                 actionPromise.resolve(angular.copy(result));
                                 result.data = configuration.responseInterceptor ?
@@ -488,5 +398,53 @@ var jsHyphen = angular.module('jsHyphen', []);
             return ApiCallFactory;
         }])
 
+    jsHyphen.factory("OfflineOnlineService", ["$rootScope", '$timeout', function ($rootScope, $timeout) {
+        var online = true;
+        var manualOffline = false;
+        var timer;
+
+        this.getState = function(){
+            return online;
+        }
+        this.setOffline = function(){
+            online = false;
+            manualOffline= true;
+            $rootScope.$broadcast("hyphenOffline");
+        };
+
+        this.setOnline = function(){
+            manualOffline = false;
+            online = true;
+            $rootScope.$broadcast("hyphenOnline");
+        };
+
+        window.addEventListener('online', function () {
+            if(!manualOffline) {
+                timer = $timeout(function () {
+                    online = true;
+                    $rootScope.$broadcast("hyphenOnline");
+                }, 5000);
+            }
+        });
+
+        window.addEventListener('offline', function () {
+            if(!manualOffline) {
+                online = false;
+                if(timer){
+                    $timeout.cancel(timer);
+                }
+                $timeout(function () {
+                    online = true;
+                    $rootScope.$broadcast("hyphenOffline");
+                });
+            }
+        });
+
+        return this;
+
+    }]);
+
 })
 ();
+
+

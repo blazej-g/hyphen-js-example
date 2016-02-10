@@ -1,4 +1,4 @@
-jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
+jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', function (HyphenIndexDb, OfflineOnlineService) {
     var HyphenDataModel = function (model, name) {
         this.model = model;
         this.modelName = name;
@@ -38,12 +38,13 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
         });
     };
 
-    HyphenDataModel.prototype.remove = function (dataParam) {
+    HyphenDataModel.prototype.remove = function (dataParam, preventSync) {
         var self = this;
         var key = this.model.key;
         var data = Array.isArray(dataParam) ? dataParam : [dataParam];
         _(data).each(function (record) {
-            if (navigator.onLine) {
+            //if app is in online mode or user explicit set prevent sync flag
+            if (OfflineOnlineService.getState() || preventSync) {
                 //HyphenIndexDb.deleteRecord(self.modelName, record[key]);
                 var id = (record && record[key]) ? record[key] : record;
                 this.data = _(this.data).filter(function (element) {
@@ -70,45 +71,42 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', function (HyphenIndexDb) {
 
     };
 
-    HyphenDataModel.prototype.add = function (records) {
+    HyphenDataModel.prototype.add = function (records, preventSync) {
         var self = this;
         var addData = JSON.parse(JSON.stringify(records));
         var key = this.model.key;
         var data = Array.isArray(addData) ? addData : [addData];
 
         _(data).each(function (record) {
-            var index;
             if (!record[key]) {
                 throw new Error("Key is not defined for '" + self.modelName + "', record cannot be added. Record" + record);
             }
 
-            var existEl = _(self.data).find(function (el, ind) {
-                index = ind;
+            var element = _(self.data).find(function (el) {
                 return el[key] === record[key];
             });
 
-            if (existEl) {
-                if (!navigator.onLine) {
+            //update
+            if (element) {
+                var newRecord =  _.extend(new self.model(record), record);
+                self.data = _([newRecord].concat(self.data)).uniq(false, function (element) {
+                    return element[key];
+                });
+
+                if (!OfflineOnlineService.getState() && !preventSync) {
                     if (record.action !== "new") {
                         record.action = "updated";
                     }
-                }
-
-                self.data[index] = _.extend(new self.model(record), record);
-
-                if (!navigator.onLine) {
                     HyphenIndexDb.updateRecordStore(record, self.modelName, record[key]);
                 }
             } else {
-                if (!navigator.onLine) {
+                //create
+                if (!OfflineOnlineService.getState() && !preventSync) {
                     record.action = "new";
-                }
-
-                record = _.extend(new self.model(record), record);
-                self.data.push(record);
-                if (!navigator.onLine) {
                     HyphenIndexDb.addRecordToStore(record, self.modelName);
                 }
+                record = _.extend(new self.model(record), record);
+                self.data.push(record);
             }
         });
 

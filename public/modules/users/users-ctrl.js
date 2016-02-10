@@ -8,6 +8,14 @@ timeminder.controller('UsersCtrl', ['$scope', '$rootScope', '$http', 'Hyphen', f
     $scope.Hyphen = Hyphen;
     $scope.model.editRowId = null;
 
+    $scope.setOnline = function(){
+        Hyphen.switchToOnline();
+    }
+
+    $scope.setOffline = function(){
+        Hyphen.switchToOffline();
+    }
+
     $scope.removeAll = function () {
         Hyphen.Users.api.removeAll.call();
     }

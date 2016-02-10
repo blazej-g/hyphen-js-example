@@ -72,13 +72,49 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
 
     Hyphen.initialize(configuration);
 
-    Hyphen.syncStartEvent(function () {
-        $rootScope.syncing = true;
+    $rootScope.$on('hyphenOnline', function (event) {
+        console.log("began online");
+        $rootScope.offline = false;
     });
 
-    Hyphen.syncEndEvent(function () {
-        $rootScope.syncing = false;
-    })
+    $rootScope.$on('hyphenOffline', function (event) {
+        console.log("began offline");
+        $rootScope.offline = true;
+    });
+
+    $rootScope.$on('syncStart', function(ev, data){
+        console.log("Sync started");
+        console.log(data);
+        $rootScope.syncing= true;
+    });
+
+    $rootScope.$on('syncSuccess', function(ev, data){
+        console.log("syncSuccess");
+        console.log(data);
+        $rootScope.syncing= false;
+    });
+
+    $rootScope.$on('syncRecordStart', function(ev, record){
+        console.log("Sync syncRecordStart");
+        console.log(record);
+    });
+
+    $rootScope.$on('syncRecordSuccess', function(ev, record){
+        console.log("Sync syncRecordSuccess");
+        console.log(record);
+    });
+
+    $rootScope.$on('syncStoreStart', function(ev, data){
+        console.log("Sync syncStoreStart");
+        console.log(data);
+    });
+
+    $rootScope.$on('syncStoreSuccess', function(ev, data){
+        console.log("Sync syncStoreSuccess");
+        console.log(data);
+    });
+
+
 
     $rootScope.$on('$stateChangeError',
         function (event, toState, toParams, fromState, fromParams, error) {

@@ -13,12 +13,7 @@ jsHyphen.factory('UsersSync', ['Hyphen', '$timeout', '$q', function (Hyphen, $ti
 
     UsersSync.delete = function (record) {
         return Hyphen.Users.api.delete.call(record._id);
-
     }
-
-    //UsersSync.syncStore = function (store) {
-
-    //}
 
     return UsersSync;
 

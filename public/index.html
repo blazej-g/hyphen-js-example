@@ -49,6 +49,7 @@
 </head>
 <body ng-app="timeMinder">
 <div ng-show="syncing" style="color: red;">Synchronizing...</div>
+<div ng-show="offline" style="color: red;">Offline mode</div>
     <div ng-controller="navCtrl" id="menu-builder-navigation" class="navbar navbar-default" role="navigation" ng-if="menuVisibility">
         <div class="container-fluid">
             <div class="navbar-header"><a class="navbar-brand" href="#">Brand</a>
