@@ -12,7 +12,7 @@ timeminder.service('Environments', ['$location', function ($location) {
         {
             name: "heroku",
             url: "hyphen-js.herokuapp.com",
-            api: "https://hyphen-js-server.herokuapp.com/",
+            api: "https://hyphen-js-server.herokuapp.com",
             debugging: false,
         },
 
