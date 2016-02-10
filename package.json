@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "postinstall" : "cd public && npm install"
+    "postinstall": "cd public && npm install"
   },
   "dependencies": {
+    "body-parser": "~1.12.0",
     "browser-logger": "^1.0.0",
     "ejs": "^2.3.1",
     "express": "~4.9.x",
-    "body-parser": "~1.12.0",
     "jsonwebtoken": "^4.2.2",
     "mongoose": "^4.0.1",
     "morgan": "~1.5.1",
