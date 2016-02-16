@@ -1,29 +1,58 @@
 jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', function (HyphenIndexDb, OfflineOnlineService) {
-    var HyphenDataModel = function (model, name) {
+    var HyphenDataModel = function (model, name, key) {
         this.model = model;
         this.modelName = name;
+        this.key = key;
         this.data = [];
         var self = this;
-        _(model.indexes).each(function (index) {
-            self["getBy" + index.name] = function (id) {
-                if (!self["index" + index.name]) {
-                    self["index" + index.name] = _(self.getData()).indexBy(function (data) {
-                        return data[index.key];
-                    });
-                }
 
-                return self["index" + index.name][id];
-            };
-        });
+        if (model.indexes) {
+            Object.keys(model.indexes).forEach(function (key) {
+                self["getBy" + model.indexes[key]] = function (id) {
+                    if (!self["index" + model.indexes[key]]) {
+                        self["index" + model.indexes[key]] = _(self.getData()).indexBy(function (data) {
+                            return data[key];
+                        });
+                    }
+
+                    return self["index" + model.indexes[key]][id];
+                };
+            });
+        }
+
+        if (model.groups) {
+            Object.keys(model.groups).forEach(function (key) {
+                self["getGroupBy" + model.groups[key]] = function (id) {
+                    if (!self["group" + model.groups[key]]) {
+                        self["group" + model.groups[key]] = _(self.getData()).groupBy(function (data) {
+                            return data[key];
+                        });
+                    }
+
+                    return self["group" + model.groups[key]][id];
+                };
+            });
+        }
     };
 
     HyphenDataModel.prototype.data = [];
 
     var clearIndexes = function () {
         var self = this;
-        _(this.model.indexes).each(function (index) {
-            self["index" + index.name] = null;
-        });
+        if(self.model.indexes) {
+            Object.keys(self.model.indexes).forEach(function (key) {
+                self["index" + self.model.indexes[key]] = null;
+            });
+        }
+    };
+
+    var clearGroups = function () {
+        var self = this;
+        if(self.model.groups) {
+            Object.keys(self.model.groups).forEach(function (key) {
+                self["group" + self.model.groups[key]] = null;
+            });
+        }
     };
 
     HyphenDataModel.prototype.getData = function () {
@@ -40,7 +69,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
 
     HyphenDataModel.prototype.remove = function (dataParam, preventSync) {
         var self = this;
-        var key = this.model.key;
+        var key = self.key;
         var data = Array.isArray(dataParam) ? dataParam : [dataParam];
         _(data).each(function (record) {
             //if app is in online mode or user explicit set prevent sync flag
@@ -68,13 +97,14 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
         }, this);
 
         clearIndexes.call(this);
+        clearGroups.call(this);
 
     };
 
     HyphenDataModel.prototype.add = function (records, preventSync) {
         var self = this;
         var addData = JSON.parse(JSON.stringify(records));
-        var key = this.model.key;
+        var key = self.key;
         var data = Array.isArray(addData) ? addData : [addData];
 
         _(data).each(function (record) {
@@ -88,7 +118,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
 
             //update
             if (element) {
-                var newRecord =  _.extend(new self.model(record), record);
+                var newRecord = _.extend(new self.model(record), record);
                 self.data = _([newRecord].concat(self.data)).uniq(false, function (element) {
                     return element[key];
                 });
@@ -111,6 +141,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
         });
 
         clearIndexes.call(this);
+        clearGroups.call(this);
     };
 
     return HyphenDataModel;

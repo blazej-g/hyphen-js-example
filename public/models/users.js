@@ -4,13 +4,20 @@ jsHyphen.factory('Users', ['Hyphen', '$timeout', '$q', function (Hyphen, $timeou
         //console.log(data);
     }
 
-    User.key = "_id";
-
     User.prototype.getFullName = function () {
         return this.user_first_name + " " + this.user_last_name;
     }
 
-    User.indexes = [{name: "Id", key: "_id"}, {name: "FirstName", key: "user_first_name"}];
+    User.indexes =
+    {
+        _id: "Id",
+        user_first_name: "FirstName"
+    }
+
+    User.groups =
+    {
+        user_first_name: "FirstName"
+    }
 
     User.new = function (record) {
         delete record._id;

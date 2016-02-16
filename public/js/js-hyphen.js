@@ -213,8 +213,8 @@ var jsHyphen = angular.module('jsHyphen', []);
     }]);
 
     jsHyphen.factory("HyphenDataStore", ['HyphenDataModel', function (HyphenDataModel) {
-        var HyphenDataStore = function (store, entityModel) {
-            HyphenDataStore.prototype.stores[store] = new HyphenDataModel(entityModel, store);
+        var HyphenDataStore = function (store, entityModel, key) {
+            HyphenDataStore.prototype.stores[store] = new HyphenDataModel(entityModel, store, key);
         }
 
         HyphenDataStore.prototype.stores = {}
@@ -270,7 +270,7 @@ var jsHyphen = angular.module('jsHyphen', []);
             } catch (e) {
                 throw new Error("Model not defned for: " + modelData.model + e.message);
             }
-            var dataStore = new HyphenDataStore(modelData.model, this.entityModel);
+            var dataStore = new HyphenDataStore(modelData.model, this.entityModel, modelData.key);
 
             //entities public properties
             this.dataModel = dataStore.stores[modelData.model];
@@ -429,12 +429,11 @@ var jsHyphen = angular.module('jsHyphen', []);
 
         window.addEventListener('offline', function () {
             if(!manualOffline) {
-                online = false;
                 if(timer){
                     $timeout.cancel(timer);
                 }
                 $timeout(function () {
-                    online = true;
+                    online = false;
                     $rootScope.$broadcast("hyphenOffline");
                 });
             }

@@ -3,9 +3,10 @@ jsHyphen.factory('Projects', ['$timeout', '$q', function ($timeout, $q) {
 
     }
 
-    Project.key = "_id";
-
-    Project.indexes = [{name: "Id", key: "_id"}];
+    Project.indexes =
+    {
+        _id : "id"
+    }
 
     Project.syncNew = function (data) {
         var def = $q.defer();

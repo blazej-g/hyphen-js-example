@@ -32,7 +32,15 @@ jsHyphen.factory('HyphenCallBase', ['$http', function ($http) {
             this.hyphenConfiguration.baseUrl = this.hyphenConfiguration.baseUrl.substring(0, this.hyphenConfiguration.baseUrl.length - 1);
         }
 
-        this.config.url = this.hyphenConfiguration.baseUrl + "/" + this.urlParser(this.httpOptions.url, params);
+        if(_.isArray(params)) {
+            this.config.url = this.hyphenConfiguration.baseUrl + "/" + this.urlParser(this.httpOptions.url, params);
+        }else{
+            if(params) {
+                this.config.url = this.hyphenConfiguration.baseUrl + "/" + this.httpOptions.url + "?" + params;
+            }else {
+                this.config.url = this.hyphenConfiguration.baseUrl + "/" + this.httpOptions.url;
+            }
+        }
         this.config.data = this.dataSet;
         if (this.hyphenConfiguration.requestInterceptor) {
             this.config = this.hyphenConfiguration.requestInterceptor(this.config);

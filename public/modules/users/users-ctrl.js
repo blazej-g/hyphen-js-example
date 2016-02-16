@@ -8,11 +8,11 @@ timeminder.controller('UsersCtrl', ['$scope', '$rootScope', '$http', 'Hyphen', f
     $scope.Hyphen = Hyphen;
     $scope.model.editRowId = null;
 
-    $scope.setOnline = function(){
+    $scope.setOnline = function () {
         Hyphen.switchToOnline();
     }
 
-    $scope.setOffline = function(){
+    $scope.setOffline = function () {
         Hyphen.switchToOffline();
     }
 
@@ -73,6 +73,8 @@ timeminder.controller('UsersCtrl', ['$scope', '$rootScope', '$http', 'Hyphen', f
     };
 
     $scope.beginUserEdit = function (user) {
+        var ng = Hyphen.Users.dataModel.getGroupByFirstName("q")
+        $scope.user = user;
         $scope.newUser = angular.copy(user);
         $scope.newUser.user_password = "";
         $scope.editUser = true;
