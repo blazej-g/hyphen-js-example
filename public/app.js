@@ -13,20 +13,20 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
             key: "_id",
             rest: [
                 {
-                    name: "signIn", url: "users/login", method: "post", responseHandler: function (data, hyphenModels) {
+                    name: "signIn", url: "/users/login", method: "post", responseHandler: function (data, hyphenModels) {
                     sessionStorage.setItem("current-user", data.user._id);
                 }
                 },
-                {name: "update", url: "users/update", method: "put"},
-                {name: "create", url: "users/create", method: "post"},
-                {name: "registerUser", url: "users/register", method: "post"},
-                {name: "getAll", url: "users", method: "get", cache: true},
-                {name: "delete", url: "users/:id", method: "delete"},
-                {name: "getOne", url: "users/:id", method: "get"},
-                {name: "removeAll", url: "users/remove_all", method: "post", action: "delete"},
+                {name: "update", url: "/users/update", method: "put"},
+                {name: "create", url: "/users/create", method: "post"},
+                {name: "registerUser", url: "/users/register", method: "post"},
+                {name: "getAll", url: "/users", method: "get", cache: true},
+                {name: "delete", url: "/users/:id", method: "delete"},
+                {name: "getOne", url: "/users/:id", method: "get"},
+                {name: "removeAll", url: "/users/remove_all", method: "post", action: "delete"},
                 {
                     name: "getUserProjects",
-                    url: "users/user_projects",
+                    url: "/users/user_projects",
                     method: "get",
                     responseHandler: function (data, hyphenModels) {
                         var projects = data.projects;
@@ -43,9 +43,9 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
             sync: true,
             priority: 1,
             rest: [
-                {name: "create", url: "projects/create", method: "post"},
-                {name: "getAll", url: "projects", method: "get", cache: true},
-                {name: "removeAll", url: "projects/remove_all", method: "post", action: "delete"},
+                {name: "create", url: "/projects/create", method: "post"},
+                {name: "getAll", url: "/projects", method: "get", cache: true},
+                {name: "removeAll", url: "/projects/remove_all", method: "post", action: "delete"},
             ],
 
         },
