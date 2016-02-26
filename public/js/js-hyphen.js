@@ -23,13 +23,6 @@ var jsHyphen = angular.module('jsHyphen', []);
                     hyphenConfiguration = configuration;
                     hyphenSynchronizer = new HyphenSynchronizer(configuration);
 
-                    service.switchToOffline = function () {
-                        OfflineOnlineService.setOffline();
-                    };
-                    service.switchToOnline = function () {
-                        OfflineOnlineService.setOnline();
-                    };
-
                     configuration.model.forEach(function (entity) {
                         service[entity.model] = new BasicModel(entity, configuration);
                         if (entity.sync) {
@@ -47,6 +40,17 @@ var jsHyphen = angular.module('jsHyphen', []);
                 service.dispose = function () {
                     CacheService.clearCache();
                     HyphenIndexDb.closeDb();
+                };
+
+                service.getState = function () {
+                    return OfflineOnlineService.getState();
+                };
+
+                service.switchToOffline = function () {
+                    OfflineOnlineService.setOffline();
+                };
+                service.switchToOnline = function () {
+                    OfflineOnlineService.setOnline();
                 };
 
                 service.initializeDb = function (identifier) {
@@ -92,6 +96,8 @@ var jsHyphen = angular.module('jsHyphen', []);
 
                     $q.all(readPromises).then(function (result) {
                         hyphenSynchronizer.synchronize(result);
+                    }, function (reason) {
+                        console.log(reason);
                     });
 
                     return readPromises;
@@ -261,7 +267,7 @@ var jsHyphen = angular.module('jsHyphen', []);
         return HyphenDataStore;
     }]);
 
-    jsHyphen.factory("BasicModel", ['ApiCallFactory', 'HyphenDataStore', '$injector', '$q', 'CacheService','OfflineOnlineService', function
+    jsHyphen.factory("BasicModel", ['ApiCallFactory', 'HyphenDataStore', '$injector', '$q', 'CacheService', 'OfflineOnlineService', function
         (ApiCallFactory, HyphenDataStore, $injector, $q, CacheService, OfflineOnlineService) {
         var BasicModel = function (modelData, configuration) {
             this.entityModel = null;
@@ -287,9 +293,7 @@ var jsHyphen = angular.module('jsHyphen', []);
                     var promise;
                     //initialize promise for every call!!!
                     var actionPromise = $q.defer();
-
-                    var args = Array.prototype.slice.call(arguments);
-                    var cacheItem = rest.name + modelData.model + args.join("");
+                    var cacheItem = rest.name + modelData.model + JSON.stringify(params);
 
                     if (OfflineOnlineService.getState()) {
                         if (!CacheService.isCached(cacheItem)) {
@@ -316,13 +320,13 @@ var jsHyphen = angular.module('jsHyphen', []);
                         }
                     } else {
                         if (self.entityModel[rest.name + "Offline"]) {
-                            try {
-                                self.entityModel[rest.name + "Offline"](params, self.api[rest.name].data, HyphenDataStore.prototype.stores);
-                                actionPromise.resolve(self.api[rest.name].data);
-                            } catch (error) {
-                                console.warn(error);
-                                actionPromise.reject("can not save data in offline" + error);
-                            }
+                            // try {
+                            self.entityModel[rest.name + "Offline"](params, self.api[rest.name].data, HyphenDataStore.prototype.stores);
+                            actionPromise.resolve(self.api[rest.name].data);
+                            //} catch (error) {
+                            //    console.warn(error);
+                            //    actionPromise.reject("can not save data in offline" + error);
+                            // }
 
                         } else {
                             var message = "No offline method: " + modelData.model + "." + rest.name + "Offline";
@@ -403,23 +407,23 @@ var jsHyphen = angular.module('jsHyphen', []);
         var manualOffline = false;
         var timer;
 
-        this.getState = function(){
+        this.getState = function () {
             return online;
         }
-        this.setOffline = function(){
+        this.setOffline = function () {
             online = false;
-            manualOffline= true;
+            manualOffline = true;
             $rootScope.$broadcast("hyphenOffline");
         };
 
-        this.setOnline = function(){
+        this.setOnline = function () {
             manualOffline = false;
             online = true;
             $rootScope.$broadcast("hyphenOnline");
         };
 
         window.addEventListener('online', function () {
-            if(!manualOffline) {
+            if (!manualOffline) {
                 timer = $timeout(function () {
                     online = true;
                     $rootScope.$broadcast("hyphenOnline");
@@ -428,8 +432,8 @@ var jsHyphen = angular.module('jsHyphen', []);
         });
 
         window.addEventListener('offline', function () {
-            if(!manualOffline) {
-                if(timer){
+            if (!manualOffline) {
+                if (timer) {
                     $timeout.cancel(timer);
                 }
                 $timeout(function () {

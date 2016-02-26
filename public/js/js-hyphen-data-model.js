@@ -5,7 +5,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
         this.key = key;
         this.data = [];
         var self = this;
-
+        this.sorted = false;
         if (model.indexes) {
             Object.keys(model.indexes).forEach(function (key) {
                 self["getBy" + model.indexes[key]] = function (id) {
@@ -39,7 +39,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
 
     var clearIndexes = function () {
         var self = this;
-        if(self.model.indexes) {
+        if (self.model.indexes) {
             Object.keys(self.model.indexes).forEach(function (key) {
                 self["index" + self.model.indexes[key]] = null;
             });
@@ -48,7 +48,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
 
     var clearGroups = function () {
         var self = this;
-        if(self.model.groups) {
+        if (self.model.groups) {
             Object.keys(self.model.groups).forEach(function (key) {
                 self["group" + self.model.groups[key]] = null;
             });
@@ -56,9 +56,32 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
     };
 
     HyphenDataModel.prototype.getData = function () {
-        return _(this.data).filter(function (el) {
-            return el.action !== "deleted";
-        });
+        var self = this;
+
+        if (self.model.sort && !self.sorted) {
+            this.data = this.data = _(this.data).sortBy(function (ob) {
+                if (self.model.sort.desc) {
+                    if (ob[self.model.sort.desc]) {
+                        return ob[self.model.sort.desc].toLowerCase();
+                    } else {
+                        return ob[self.model.sort.desc];
+                    }
+                }
+                if (self.model.sort.asc) {
+                    if (ob[self.model.sort.asc]) {
+                        return ob[self.model.sort.asc].toLowerCase();
+                    } else {
+                        return ob[self.model.sort.asc];
+                    }
+                }
+            });
+            if (self.model.sort.desc) {
+                this.data = this.data.reverse();
+            }
+            self.sorted = true;
+            // console.log(this.data)
+        }
+        return this.data;
     };
 
     HyphenDataModel.prototype.where = function (condition) {
@@ -98,6 +121,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
 
         clearIndexes.call(this);
         clearGroups.call(this);
+        self.sorted = false;
 
     };
 
@@ -142,7 +166,9 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
 
         clearIndexes.call(this);
         clearGroups.call(this);
+        self.sorted = false;
     };
 
     return HyphenDataModel;
-}]);
+}])
+;

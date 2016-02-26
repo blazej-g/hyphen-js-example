@@ -10,46 +10,37 @@ jsHyphen.factory('HyphenCallBase', ['$http', function ($http) {
     };
 
     HyphenCallBase.prototype.urlParser = function (url, params) {
-        var parameters = Array.isArray(params) ? params : [params];
-        var segments = url.split("/");
-        var paramCounter = 0;
-        _(segments).each(function (seg, index) {
-            if (seg.indexOf(":") !== -1) {
-                segments[index] = parameters[paramCounter];
-                paramCounter++;
-            }
-        });
 
-        return segments.join("/");
+        for (var property in params) {
+            url = url.replace(":" + property, params[property]);
+        }
+        return url;
     };
 
-    var strEndsWith = function(str, suffix) {
-        return str.match(suffix+"$")===suffix;
+    var strEndsWith = function (str, suffix) {
+        return str.match(suffix + "$") === suffix;
     };
 
     HyphenCallBase.prototype.invoke = function (params) {
         this.config = angular.copy(this.httpOptions);
         var url = "";
-        if(!strEndsWith(this.hyphenConfiguration.baseUrl, "/")) {
-            url=  this.hyphenConfiguration.baseUrl ;
+        if (!strEndsWith(this.hyphenConfiguration.baseUrl, "/")) {
+            url = this.hyphenConfiguration.baseUrl;
         }
 
-        if(_.isArray(params)) {
+        if (params) {
             this.config.url = url + this.urlParser(this.httpOptions.url, params);
-        }else{
-            if(params) {
-                this.config.url = url + this.httpOptions.url + "?" + params;
-            }else {
-                this.config.url = url + this.httpOptions.url;
-            }
+        } else {
+            this.config.url = url + this.httpOptions.url;
         }
+
         this.config.data = this.dataSet;
         if (this.hyphenConfiguration.requestInterceptor) {
             this.config = this.hyphenConfiguration.requestInterceptor(this.config);
         }
 
         //hyphen cache property is the same like the native $http cache so it prevent from making http request
-        this.config.cache=false;
+        this.config.cache = false;
         return this.$http(this.config);
     };
 

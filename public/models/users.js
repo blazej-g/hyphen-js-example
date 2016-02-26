@@ -19,6 +19,11 @@ jsHyphen.factory('Users', ['Hyphen', '$timeout', '$q', function (Hyphen, $timeou
         user_first_name: "FirstName"
     }
 
+    User.sort =
+    {
+        asc : "created_at"
+    }
+
     User.new = function (record) {
         delete record._id;
         Hyphen.Users.api.create.data = record;
@@ -31,7 +36,7 @@ jsHyphen.factory('Users', ['Hyphen', '$timeout', '$q', function (Hyphen, $timeou
     }
 
     User.delete = function (record) {
-        return Hyphen.Users.api.delete.call(record._id);
+        return Hyphen.Users.api.delete.call({id: record._id});
     }
 
     User.getAllOffline = function (params, data, dataModel) {
