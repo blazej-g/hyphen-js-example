@@ -1,7 +1,7 @@
 jsHyphen.factory('Users', ['Hyphen', '$timeout', '$q', function (Hyphen, $timeout, $q) {
 
     var User = function (data) {
-        //console.log(data);
+
     }
 
     User.prototype.getFullName = function () {
