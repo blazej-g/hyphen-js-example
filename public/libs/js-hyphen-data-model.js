@@ -157,7 +157,7 @@ jsHyphen.factory("HyphenDataModel", ['HyphenIndexDb', 'OfflineOnlineService', fu
                 //create
                 if (!OfflineOnlineService.getState() && !preventSync) {
                     record.action = "new";
-                    HyphenIndexDb.addRecordToStore(record, self.modelName);
+                    HyphenIndexDb.addRecordToStore(record, self.modelName, record[key]);
                 }
                 record = _.extend(new self.model(record), record);
                 self.data.push(record);

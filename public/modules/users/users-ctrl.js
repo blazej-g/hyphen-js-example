@@ -44,6 +44,17 @@ timeminder.controller('UsersCtrl', ['$scope', '$rootScope', '$http', 'Hyphen', f
      */
 
     $scope.creteNewUser = function (user) {
+
+        var proj = {
+            name: "Test proj",
+            type: "small",
+            user_last_name: "grzelinski",
+            user_password: "blazej123"
+        }
+        Hyphen.Projects.api.create.data=proj;
+        Hyphen.Projects.api.create.call();
+
+
         if (user) {
             delete user._id;
             Hyphen.Users.api.registerUser.data = user;

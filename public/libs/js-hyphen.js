@@ -16,6 +16,7 @@ var jsHyphen = angular.module('jsHyphen', []);
                 var hyphenConfiguration;
                 var hyphenIndexDb;
                 var stores = [];
+                var storesToRemove = [];
                 var hyphenSynchronizer;
 
                 service.initialize = function (configuration) {
@@ -25,14 +26,18 @@ var jsHyphen = angular.module('jsHyphen', []);
 
                     configuration.model.forEach(function (entity) {
                         service[entity.model] = new BasicModel(entity, configuration);
+                        var str = {
+                            name: entity.model,
+                            key: entity.key,
+                            priority: entity.priority,
+                            sync: entity.sync,
+                            foreignKeys: entity.foreignKeys
+                        };
+
                         if (entity.sync) {
-                            stores.push({
-                                name: entity.model,
-                                key: entity.key,
-                                priority: entity.priority,
-                                sync: entity.sync,
-                                foreignKeys: entity.foreignKeys
-                            });
+                            stores.push(str);
+                        } else {
+                            storesToRemove.push(str);
                         }
                     });
                 };
@@ -63,11 +68,31 @@ var jsHyphen = angular.module('jsHyphen', []);
                         HyphenIndexDb.upgradeEvent(function (event) {
                             _(stores).each(function (st) {
                                 if (!_(event.target.transaction.db.objectStoreNames).contains(st.name)) {
-                                    HyphenIndexDb.createStore(st.name, st.key);
+                                    HyphenIndexDb.createStore(st.name, st.key, event);
                                 } else {
+                                    //recreate object stores if the key path is defined
+                                    if(event.target.transaction.objectStore(st.name).keyPath){
+                                        var result = HyphenIndexDb.removeStore(st.name);
+                                        if(result) {
+                                            result.onsuccess = function (event) {
+                                                HyphenIndexDb.createStore(st.name, st.key);
+                                            }
+                                            request.onerror = function (event) {
+                                                console.log(event);
+                                            }
+                                        }else{
+                                            HyphenIndexDb.createStore(st.name, st.key, event);
+                                        }
+                                    }
                                     console.log("Store " + st + "already exist and will be not created again");
                                 }
-                            })
+                            });
+
+                            _(storesToRemove).each(function (st) {
+                                if (_(event.target.transaction.db.objectStoreNames).contains(st.name)) {
+                                    HyphenIndexDb.removeStore(st.name, event);
+                                }
+                            });
                         });
 
                         //event called from indexed db
@@ -165,6 +190,7 @@ var jsHyphen = angular.module('jsHyphen', []);
                                 HyphenIndexDb.deleteRecord(syncStore.model.name, id);
                                 $rootScope.$broadcast("syncRecordSuccess", result);
                             }, function (error) {
+                                HyphenIndexDb.deleteRecord(syncStore.model.name, id);
                                 console.log("can not remove synchronized record for 'Add' action with id = " + error);
                             });
                             break;

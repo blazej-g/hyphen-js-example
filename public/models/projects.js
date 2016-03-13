@@ -1,4 +1,4 @@
-jsHyphen.factory('Projects', ['$timeout', '$q', function ($timeout, $q) {
+jsHyphen.factory('Projects', ['$timeout', '$q', 'Hyphen', function ($timeout, $q, Hyphen) {
     var Project = function () {
 
     }
@@ -8,13 +8,15 @@ jsHyphen.factory('Projects', ['$timeout', '$q', function ($timeout, $q) {
         _id : "id"
     }
 
-    Project.syncNew = function (data) {
-        var def = $q.defer();
-        $timeout(function () {
-            def.resolve("data resolvedd");
-        }, 100);
+    Project.createOffline = function (params, data, dataModel) {
+        data._id = Math.random() * 10000;
+        dataModel.Projects.add(data);
+    }
 
-        return def.promise;
+    Project.new = function (record) {
+        delete record._id;
+        Hyphen.Projects.api.create.data = record;
+        return Hyphen.Projects.api.create.call()
     }
 
     Project.syncUpdated = function (data) {
