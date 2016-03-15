@@ -75,7 +75,7 @@ timeminder.controller('UsersCtrl', ['$scope', '$rootScope', '$http', 'Hyphen', f
     $scope.deleteUser = function (user) {
         _(Hyphen.Users.dataModel.data).each(function (user) {
             if (user.checked) {
-                Hyphen.Users.api.delete.call([user._id]);
+                Hyphen.Users.api.delete.call({id: user._id});
             }
         });
 
