@@ -64,24 +64,24 @@ var jsHyphen = angular.module('jsHyphen', []);
                     }
                     if (!HyphenIndexDb.isInitialized()) {
                         var dbName = this.configuration.dbName + identifier;
-                        hyphenIndexDb = new HyphenIndexDb(dbName, this.configuration.dbVersion, stores, identifier);
-                        HyphenIndexDb.upgradeEvent(function (event) {
+                        hyphenIndexDb = new HyphenIndexDb(dbName, (new Date / 1e3 | 0) * 100, stores, identifier);
+                        hyphenIndexDb.upgradeEvent(function (event) {
                             _(stores).each(function (st) {
                                 if (!_(event.target.transaction.db.objectStoreNames).contains(st.name)) {
-                                    HyphenIndexDb.createStore(st.name, st.key, event);
+                                    hyphenIndexDb.createStore(st.name, st.key, event);
                                 } else {
                                     //recreate object stores if the key path is defined
                                     if(event.target.transaction.objectStore(st.name).keyPath){
-                                        var result = HyphenIndexDb.removeStore(st.name);
+                                        var result = hyphenIndexDb.removeStore(st.name);
                                         if(result) {
                                             result.onsuccess = function (event) {
-                                                HyphenIndexDb.createStore(st.name, st.key);
+                                                hyphenIndexDb.createStore(st.name, st.key);
                                             }
                                             request.onerror = function (event) {
                                                 console.log(event);
                                             }
                                         }else{
-                                            HyphenIndexDb.createStore(st.name, st.key, event);
+                                            hyphenIndexDb.createStore(st.name, st.key, event);
                                         }
                                     }
                                     console.log("Store " + st + "already exist and will be not created again");
@@ -90,13 +90,13 @@ var jsHyphen = angular.module('jsHyphen', []);
 
                             _(storesToRemove).each(function (st) {
                                 if (_(event.target.transaction.db.objectStoreNames).contains(st.name)) {
-                                    HyphenIndexDb.removeStore(st.name, event);
+                                    hyphenIndexDb.removeStore(st.name, event);
                                 }
                             });
                         });
 
                         //event called from indexed db
-                        HyphenIndexDb.openEvent(function () {
+                        hyphenIndexDb.openEvent(function () {
                             readFromIndexDb(stores);
                         });
                     } else {
@@ -115,7 +115,7 @@ var jsHyphen = angular.module('jsHyphen', []);
                     syncModelsPromise = $q.defer();
                     var readPromises = [];
                     _(dbStores).each(function (store) {
-                        var indexReadPromise = HyphenIndexDb.getStoreData(store);
+                        var indexReadPromise = hyphenIndexDb.getStoreData(store);
                         readPromises.push(indexReadPromise);
                     });
 
