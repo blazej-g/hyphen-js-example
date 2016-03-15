@@ -49,6 +49,7 @@ jsHyphen.factory('Users', ['Hyphen', '$timeout', '$q', function (Hyphen, $timeou
         dataModel.Users.add(data);
     }
 
+
     User.deleteOffline = function (params, data, dataModel) {
         var user = dataModel.Users.getById(params.id);
         if (user)

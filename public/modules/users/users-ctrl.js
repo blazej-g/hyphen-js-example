@@ -51,8 +51,6 @@ timeminder.controller('UsersCtrl', ['$scope', '$rootScope', '$http', 'Hyphen', f
             user_last_name: "grzelinski",
             user_password: "blazej123"
         }
-        Hyphen.Projects.api.create.data=proj;
-        Hyphen.Projects.api.create.call();
 
 
         if (user) {

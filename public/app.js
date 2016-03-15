@@ -17,17 +17,17 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
                     sessionStorage.setItem("current-user", data.user._id);
                 }
                 },
-                {name: "update", url: "/users/update", method: "put"},
-                {name: "create", url: "/users/create", method: "post"},
-                {name: "registerUser", url: "/users/register", method: "post"},
-                {name: "getAll", url: "/users", method: "get", cache: true},
-                {name: "delete", url: "/users/:id", method: "delete"},
-                {name: "getOne", url: "/users/:id", method: "get"},
-                {name: "removeAll", url: "/users/remove_all", method: "post", action: "delete"},
+                {name: "update", url: "/users/update", method: "put", offline: true},
+                {name: "create", url: "/users/create", method: "post", offline: true},
+                {name: "registerUser", url: "/users/register", method: "post", offline: false},
+                {name: "getAll", url: "/users", method: "get", cache: true, offline: true},
+                {name: "delete", url: "/users/:id", method: "delete", offline: true},
+                {name: "getOne", url: "/users/:id", method: "get", offline: true},
+                {name: "removeAll", url: "/users/remove_all", method: "post", action: "delete", offline: true},
                 {
                     name: "getUserProjects",
                     url: "/users/user_projects",
-                    method: "get",
+                    method: "get", offline: true,
                     responseHandler: function (data, hyphenModels) {
                         var projects = data.projects;
                         hyphenModels.Projects.dataModel.add(projects);
@@ -45,7 +45,7 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
             rest: [
                 {name: "create", url: "/projects/create", method: "post"},
                 {name: "getAll", url: "/projects", method: "get", cache: true},
-                {name: "removeAll", url: "/projects/remove_all", method: "post", action: "delete"},
+                {name: "removeAll", url: "/projects/remove_all", method: "post", action: "delete", offline: false},
             ],
 
         },
@@ -113,6 +113,20 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
         console.log("Sync syncStoreSuccess");
         console.log(data);
     });
+
+    $rootScope.$on('onNotSupportedMethodCall', function(ev, data){
+        console.log("On not supported method call");
+        console.log(data);
+    });
+
+    $rootScope.$on('apiCallFailure', function(ev, data){
+        console.log("On api call failure");
+        console.log(data);
+    });
+
+
+
+
 
 
 

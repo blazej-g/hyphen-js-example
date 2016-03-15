@@ -293,8 +293,8 @@ var jsHyphen = angular.module('jsHyphen', []);
         return HyphenDataStore;
     }]);
 
-    jsHyphen.factory("BasicModel", ['ApiCallFactory', 'HyphenDataStore', '$injector', '$q', 'CacheService', 'OfflineOnlineService', function
-        (ApiCallFactory, HyphenDataStore, $injector, $q, CacheService, OfflineOnlineService) {
+    jsHyphen.factory("BasicModel", ['ApiCallFactory', 'HyphenDataStore', '$injector', '$q', 'CacheService', 'OfflineOnlineService', '$rootScope', function
+        (ApiCallFactory, HyphenDataStore, $injector, $q, CacheService, OfflineOnlineService, $rootScope) {
         var BasicModel = function (modelData, configuration) {
             this.entityModel = null;
             try {
@@ -343,30 +343,34 @@ var jsHyphen = angular.module('jsHyphen', []);
                                 self.api[rest.name].loading--;
                                 self.api.loading--;
                                 actionPromise.reject(reason);
+                                var d={data: self.api[rest.name].data, warning: "api_call_failure", params: params, config: rest, reason: reason};
+                                $rootScope.$broadcast("apiCallFailure", d);
                             });
                         } else {
                             actionPromise.resolve([]);
                         }
                     } else {
-                        if (self.entityModel[rest.name + "Offline"]) {
-                            // try {
+                        //if
+                        if (self.entityModel[rest.name + "Offline"] && rest.offline) {
                             self.entityModel[rest.name + "Offline"](params, self.api[rest.name].data, HyphenDataStore.prototype.stores);
                             actionPromise.resolve(self.api[rest.name].data);
-                            //} catch (error) {
-                            //    console.warn(error);
-                            //    actionPromise.reject("can not save data in offline" + error);
-                            // }
 
                         } else {
-                            var message = "No offline method: " + modelData.model + "." + rest.name + "Offline";
-                            console.warn(message)
-                            throw new Error(message);
+                            if(rest.offline) {
+                                var message = "No offline method: " + modelData.model + "." + rest.name + "Offline";
+                                console.warn(message)
+                                throw new Error(message);
+                            }else{
+                                var d={data: self.api[rest.name].data, warning: "offline_not_supported", params: params, config: rest};
+                                actionPromise.resolve(d);
+                                $rootScope.$broadcast("onNotSupportedMethodCall", d);
+                            }
                         }
                     }
 
                     //if the method is defined as callOnce, call method only first time and return empty arry every next time
                     if (rest.cache && rest.method !== "get") {
-                        throw new Error("Cache option can be switch on only for get parameters");
+                        throw new Error("Cache option can be switch on only for get api calls");
                     }
 
                     if (rest.cache && rest.method === "get" && !CacheService.isCached(cacheItem)) {
