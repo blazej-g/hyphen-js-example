@@ -8,9 +8,9 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
         }
         var request;
         if(version) {
-            request = window.indexedDB.open(name, version);
+            request = this.indexedDB.open(name, version);
         }else{
-            request = window.indexedDB.open(name, version);
+            request = this.indexedDB.open(name);
         }
         request.onsuccess = function (event) {
             self.db = event.target.result;
