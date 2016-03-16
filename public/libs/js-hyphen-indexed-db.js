@@ -1,16 +1,16 @@
 jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
     var IndexedDbCommandBase = function (name, version) {
         var self = this;
-        this.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+        var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
 
-        if (!this.indexedDB) {
+        if (!indexedDB) {
             console.log("Indexed db not supported, offline mode not supported");
         }
         var request;
         if(version) {
-            request = this.indexedDB.open(name, version);
+            request = indexedDB.open(name, version);
         }else{
-            request = this.indexedDB.open(name);
+            request = indexedDB.open(name);
         }
         request.onsuccess = function (event) {
             self.db = event.target.result;
