@@ -1,5 +1,5 @@
-jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
-    var IndexedDbCommandBase = function (name, version) {
+jsHyphen.factory("HyphenIndexDb", ['$q', function ($q) {
+    var HyphenIndexDb = function (name, version) {
         var self = this;
         var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
 
@@ -13,17 +13,15 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
             request = indexedDB.open(name);
         }
         request.onsuccess = function (event) {
-            self.db = event.target.result;
-            //IndexedDbC self.db;
+            HyphenIndexDb.db = event.target.result;
             if (self.openEvent) {
                 self.openEvent(event);
             }
-
-
         }
         request.onerror = function (event) {
             console.log(event);
         };
+
         request.onupgradeneeded = function (event) {
             if (self.upgradeEvent) {
                 self.upgradeEvent(event);
@@ -35,20 +33,10 @@ jsHyphen.factory("IndexedDbCommandBase", ['$q', function () {
         }
     }
 
-    return IndexedDbCommandBase;
-}]);
-
-jsHyphen.factory("HyphenIndexDb", ['$q', 'IndexedDbCommandBase', function ($q, IndexedDbCommandBase) {
-    var HyphenIndexDb = function (name, version) {
-        IndexedDbCommandBase.call(this, name, version);
-        HyphenIndexDb.instance = this;
-    }
-    HyphenIndexDb.prototype = Object.create(IndexedDbCommandBase.prototype);
 
     //static methods
-
     HyphenIndexDb.closeDb = function () {
-        this.db=HyphenIndexDb.instance.db;
+        this.db=HyphenIndexDb.db;
         if (this.db) {
             this.db.close();
             this.db = null;
@@ -56,7 +44,7 @@ jsHyphen.factory("HyphenIndexDb", ['$q', 'IndexedDbCommandBase', function ($q, I
     }
 
     HyphenIndexDb.isInitialized = function () {
-        if (HyphenIndexDb.instance && HyphenIndexDb.instance.db) {
+        if (HyphenIndexDb.db) {
             return true;
         }
         else {
@@ -65,14 +53,14 @@ jsHyphen.factory("HyphenIndexDb", ['$q', 'IndexedDbCommandBase', function ($q, I
     }
 
     HyphenIndexDb.addRecordToStore = function (data, store, id) {
-        var transaction = HyphenIndexDb.instance.db.transaction(store, "readwrite");
+        var transaction = HyphenIndexDb.db.transaction(store, "readwrite");
         var storeObject = transaction.objectStore(store);
         storeObject.add(data, id);
     }
 
     HyphenIndexDb.addOrUpdateRecord = function (record, store, id) {
         var self = this;
-        var transaction = HyphenIndexDb.instance.db.transaction(store, "readwrite");
+        var transaction = HyphenIndexDb.db.transaction(store, "readwrite");
         var storeObject = transaction.objectStore(store);
         var request = storeObject.get(id);
         request.onerror = function () {
@@ -89,16 +77,37 @@ jsHyphen.factory("HyphenIndexDb", ['$q', 'IndexedDbCommandBase', function ($q, I
     }
 
     HyphenIndexDb.updateRecordStore = function (data, store, id) {
-        var objectStore = HyphenIndexDb.instance.db.transaction(store, "readwrite").objectStore(store);
+        var objectStore = HyphenIndexDb.db.transaction(store, "readwrite").objectStore(store);
         var request = objectStore.get(id);
         request.onsuccess = function () {
             objectStore.put(data, id);
         };
     }
 
+    HyphenIndexDb.prototype.getStoreData = function (store) {
+        var transaction = HyphenIndexDb.db.transaction(store.name, "readwrite");
+        var dbStore = transaction.objectStore(store.name);
+        var request = dbStore.openCursor();
+        var data = [];
+        var deferred = $q.defer();
+        request.onsuccess = function (event) {
+            var cursor = event.target.result;
+            if (cursor) {
+                data.push(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve({data: data, model: store});
+            }
+        }
+        request.onerror = function (event) {
+            deferred.resolve(event);
+        };
+        return deferred.promise;
+    }
+
     //instance methods
     HyphenIndexDb.deleteRecord = function (store, id) {
-        var objectStore = HyphenIndexDb.instance.db.transaction(store, "readwrite").objectStore(store);
+        var objectStore = HyphenIndexDb.db.transaction(store, "readwrite").objectStore(store);
         objectStore.delete(id);
     }
 
@@ -122,27 +131,6 @@ jsHyphen.factory("HyphenIndexDb", ['$q', 'IndexedDbCommandBase', function ($q, I
 
     HyphenIndexDb.prototype.openEvent = function (method) {
         return this.openEvent = method;
-    }
-
-    HyphenIndexDb.prototype.getStoreData = function (store) {
-        var transaction = this.db.transaction(store.name, "readwrite");
-        var dbStore = transaction.objectStore(store.name);
-        var request = dbStore.openCursor();
-        var data = [];
-        var deferred = $q.defer();
-        request.onsuccess = function (event) {
-            var cursor = event.target.result;
-            if (cursor) {
-                data.push(cursor.value);
-                cursor.continue();
-            } else {
-                deferred.resolve({data: data, model: store});
-            }
-        }
-        request.onerror = function (event) {
-            deferred.resolve(event);
-        };
-        return deferred.promise;
     }
 
     return HyphenIndexDb;
