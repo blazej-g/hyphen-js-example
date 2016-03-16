@@ -19,7 +19,7 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
                 },
                 {name: "update", url: "/users/update", method: "put", offline: true},
                 {name: "create", url: "/users/create", method: "post", offline: true},
-                {name: "registerUser", url: "/users/register", method: "post", offline: false},
+                {name: "registerUser", url: "/users/register", method: "post", offline: true},
                 {name: "getAll", url: "/users", method: "get", cache: true, offline: true},
                 {name: "delete", url: "/users/:id", method: "delete", offline: true},
                 {name: "getOne", url: "/users/:id", method: "get", offline: true},
