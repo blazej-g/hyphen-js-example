@@ -64,7 +64,7 @@ var jsHyphen = angular.module('jsHyphen', []);
                     }
                     if (!HyphenIndexDb.isInitialized()) {
                         var dbName = this.configuration.dbName + identifier;
-                        hyphenIndexDb = new HyphenIndexDb(dbName, (new Date / 1e3 | 0) * 100, stores, identifier);
+                        hyphenIndexDb = new HyphenIndexDb(dbName,  this.configuration.dbVersion, stores, identifier);
                         hyphenIndexDb.upgradeEvent(function (event) {
                             _(stores).each(function (st) {
                                 if (!_(event.target.transaction.db.objectStoreNames).contains(st.name)) {

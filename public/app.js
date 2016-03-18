@@ -57,8 +57,8 @@ timeminder.run(['$rootScope', 'Environments', 'Hyphen', 'Environments', '$state'
     var configuration = {
         model: dataModel,
         baseUrl: Environments.settings.api,
-        dbVersion: timestamp * 1000,
-        dbName: 'JsHyphenDb',
+        dbVersion: 2,
+        dbName: 'HyphenJsDb',
         requestInterceptor: function (config) {
             //intercept all request and provide authorization token
             var token = sessionStorage.getItem("token");
